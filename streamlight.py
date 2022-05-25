@@ -33,25 +33,25 @@ while True:
    start_time = time.time()
    #cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
    if not cap.isOpened():
-       print('Cannot open RTSP stream')
+       logger.error('Cannot open RTSP stream')
        #print(cv2.getBuildInformation())
        exit(-1)
 
    ret, frame = cap.read()
 
-   print(f"Original {frame.shape=}")
+   logger.debug(f"Original {frame.shape=}")
    frame = cv2.resize(frame, (480,270))
-   print(f"Resized {frame.shape=}")
+   logger.debug(f"Resized {frame.shape=}")
    is_success, buffer = cv2.imencode(".jpg", frame)
-   print(f"buffer size is {len(buffer)=}")
+   logger.debug(f"buffer size is {len(buffer)=}")
    io_buf = io.BytesIO(buffer)
    #cv2.imwrite('temp.jpg', frame)
    #cap.release()
    #break
    time2 = time.time()
-   print(f"Time to prep image {1000*(time2-start_time):.1f}ms")
+   logger.info(f"Time to prep image {1000*(time2-start_time):.1f}ms")
    image_query = gl.submit_image_query(detector_id=det_id, image=io_buf)
    time3 = time.time()
-   print(f"API time for image {1000*(time3-time2):.1f}ms")
+   logger.info(f"API time for image {1000*(time3-time2):.1f}ms")
 
 cap.release()
