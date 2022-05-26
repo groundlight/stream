@@ -15,14 +15,14 @@ dictConfig(yaml.safe_load(open(fname, 'r')))
 
 logger = logging.getLogger(name='groundlight.stream')
 
-#rtsp_url = "rtsp://admin:password@10.77.0.29:554/cam/realmonitor?channel=1&subtype=0"
-
-det_id = "det_29R4pwUkfuJNpjmXUWev8fjQUVg"
+RSTP = "rtsp://admin:password@10.77.0.29:554/cam/realmonitor?channel=1&subtype=0"
+DETECTOR = "det_29R4pwUkfuJNpjmXUWev8fjQUVg"
+ENDPOINT = "https://device.integ.positronix.ai/device-api"
 
 logger.info(f"configured to read camera at {rtsp_url}")
 logger.info(f"using detector ID {det_id}")
 
-gl = Groundlight(endpoint="https://device.integ.positronix.ai/device-api")
+gl = Groundlight(endpoint=ENDPOINT)
 
 logger.info(f"available detectors:")
 logger.info(gl.list_detectors())
