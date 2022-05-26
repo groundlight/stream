@@ -4,11 +4,10 @@ process frames from a video stream
 
 ## build
 
-The docker image uses the groundlight python sdk. To build the image,
-we need to make aws credentials available to the build process so it
-can authenticate to aws codeartifact because the python package is
-private as of this writing. Set the following env variables with real
-credentials
+The docker image uses the groundlight python sdk. We need to make aws
+credentials available to the build process so it can authenticate to
+aws codeartifact because the python package is private as of this
+writing. Set the following env variables with real credentials
 
 ``` shell
 export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
