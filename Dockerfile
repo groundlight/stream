@@ -3,7 +3,6 @@ RUN apk add \
     aws-cli \
     cmake \
     g++ \
-    gfortran \
     linux-headers \
     make \
     openblas-dev \
