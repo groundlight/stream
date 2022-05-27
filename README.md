@@ -21,3 +21,7 @@ docker build -t stream:local --build-arg AWS_ACCESS_KEY_ID --build-arg AWS_SECRE
 
 ## run
 Now you can run it
+
+``` shell
+docker run stream:local
+```
