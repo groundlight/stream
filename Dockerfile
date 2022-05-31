@@ -13,4 +13,3 @@ RUN aws codeartifact login --region us-west-2 --domain positronix --repository i
 RUN pip install -r requirements.txt
 ADD . /src/
 ENTRYPOINT ["python","streamlight.py"]
-ENTRYPOINT /bin/bash
