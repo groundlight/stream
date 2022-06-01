@@ -16,7 +16,9 @@ import io
 import logging
 from logging.config  import dictConfig
 import os
+from queue import Queue
 import time
+from threading import Thread
 
 import cv2
 import docopt
@@ -32,52 +34,70 @@ logger = logging.getLogger(name='groundlight.stream')
 INTEG = "https://device.integ.positronix.ai/device-api"
 
 
+def worker(gl, detector):
+   logger.debug(f"Original {frame.shape=}")
+   frame = cv2.resize(frame, (480,270))
+   logger.debug(f"Resized {frame.shape=}")
+
+   is_success, buffer = cv2.imencode(".jpg", frame)
+   logger.debug(f"buffer size is {len(buffer)}")
+   io_buf = io.BytesIO(buffer)
+   #cv2.imwrite('temp.jpg', frame)
+   end = time.time()
+   logger.info(f"Time to prep image {1000*(end-start):.1f}ms")
+   image_query = gl.submit_image_query(detector_id=DETECTOR, image=io_buf)
+   start = end
+   end = time.time()
+   logger.info(f"API time for image {1000*(start-end):.1f}ms")
+
+
 def main():
-    args = docopt.docopt(__doc__)
-    if args.get('--verbose'):
-        logger.level = logging.DEBUG
-        logger.debug(f'{args=}')
+   args = docopt.docopt(__doc__)
+   if args.get('--verbose'):
+       logger.level = logging.DEBUG
+       logger.debug(f'{args=}')
 
-    ENDPOINT=args['--endpoint']
-    if ENDPOINT == 'integ':
-        ENDPOINT = INTEG
-    TOKEN=args['--token']
-    DETECTOR=args['--detector']
-    STREAM=args['--stream']
-    try:
-        STREAM=int(STREAM)
-    except ValueError as e:
-        logger.debug(f'{STREAM=} is not an int, so it must be a filename or url.')
+   ENDPOINT=args['--endpoint']
+   if ENDPOINT == 'integ':
+       ENDPOINT = INTEG
+   TOKEN=args['--token']
+   DETECTOR=args['--detector']
+   STREAM=args['--stream']
+   try:
+       STREAM=int(STREAM)
+   except ValueError as e:
+       logger.debug(f'{STREAM=} is not an int, so it must be a filename or url.')
+   FPS=args['--fps']
+   try:
+      FPS=int(FPS)
+      delay = 1/FPS
+   except ValueError as e:
+      logger.error(f'Invalid argument {FPS=}. Must be an integer.')
+      exit(-1)
 
-    logger.debug(f'creating groundlight client with {ENDPOINT=} and {TOKEN=}')
-    gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
+   logger.debug(f'creating groundlight client with {ENDPOINT=} and {TOKEN=}')
+   gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
 
-    logger.debug(f'initializing video capture: {STREAM=}')
-    cap = cv2.VideoCapture(STREAM, cv2.CAP_FFMPEG)
+   logger.debug(f'initializing video capture: {STREAM=}')
+   cap = cv2.VideoCapture(STREAM, cv2.CAP_FFMPEG)
 
-    while True:
-       start = time.time()
-       if not cap.isOpened():
-           logger.error(f'Cannot open stream {STREAM=}')
-           exit(-1)
+   q = Queue(100)
+   workers = []
+   for i in range(FPS):
+      thread = Thread(target=worker)
+      workers.append(thread)
+      thread.start()
 
-       ret, frame = cap.read()
-       logger.debug(f"Original {frame.shape=}")
-       frame = cv2.resize(frame, (480,270))
-       logger.debug(f"Resized {frame.shape=}")
+   while True:
+      start = time.time()
+      if not cap.isOpened():
+          logger.error(f'Cannot open stream {STREAM=}')
+          exit(-1)
 
-       is_success, buffer = cv2.imencode(".jpg", frame)
-       logger.debug(f"buffer size is {len(buffer)}")
-       io_buf = io.BytesIO(buffer)
-       #cv2.imwrite('temp.jpg', frame)
-       end = time.time()
-       logger.info(f"Time to prep image {1000*(end-start):.1f}ms")
-       image_query = gl.submit_image_query(detector_id=DETECTOR, image=io_buf)
-       start = end
-       end = time.time()
-       logger.info(f"API time for image {1000*(start-end):.1f}ms")
+      ret, frame = cap.read()
+      q.put(frame)
 
-    cap.release()
+   cap.release()
 
 
 if __name__ == '__main__':
