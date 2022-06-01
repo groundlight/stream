@@ -6,7 +6,7 @@ usage: streamlight [options] -t TOKEN -d DETECTOR
 options:
   -d, --detector=ID      detector id to which the image queries are sent
   -e, --endpoint=URL     api endpoint [default: https://device.positronix.ai/device-api]
-  -f, --framerate=FPS    number of frames to capture per second.
+  -f, --fps=FPS          number of frames to capture per second. [default: 5]
   -h, --help             show this message.
   -s, --stream=STREAM    id, filename or URL of a video stream (e.g. rtsp://host:port/script?params) [default: 0]
   -t, --token=TOKEN      api token to authenticate with the groundlight api
@@ -34,21 +34,25 @@ logger = logging.getLogger(name='groundlight.stream')
 INTEG = "https://device.integ.positronix.ai/device-api"
 
 
-def worker(gl, detector):
-   logger.debug(f"Original {frame.shape=}")
-   frame = cv2.resize(frame, (480,270))
-   logger.debug(f"Resized {frame.shape=}")
+def frame_processor(q:Queue, client:Groundlight, detector:str):
+   logger.debug(f'frame_processor({q=}, {client=}, {detector=})')
+   while True:
+      start = time.time()
+      frame = q.get() # locks
+      logger.debug(f"Original {frame.shape=}")
+      frame = cv2.resize(frame, (480,270))
+      logger.debug(f"Resized {frame.shape=}")
 
-   is_success, buffer = cv2.imencode(".jpg", frame)
-   logger.debug(f"buffer size is {len(buffer)}")
-   io_buf = io.BytesIO(buffer)
-   #cv2.imwrite('temp.jpg', frame)
-   end = time.time()
-   logger.info(f"Time to prep image {1000*(end-start):.1f}ms")
-   image_query = gl.submit_image_query(detector_id=DETECTOR, image=io_buf)
-   start = end
-   end = time.time()
-   logger.info(f"API time for image {1000*(start-end):.1f}ms")
+      is_success, buffer = cv2.imencode(".jpg", frame)
+      logger.debug(f"buffer size is {len(buffer)}")
+      io_buf = io.BytesIO(buffer)
+      #cv2.imwrite('temp.jpg', frame)
+      end = time.time()
+      logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
+      image_query = client.submit_image_query(detector_id=detector, image=io_buf)
+      start = end
+      end = time.time()
+      logger.info(f"API time for image {1000*(start-end):.1f}ms")
 
 
 def main():
@@ -78,12 +82,12 @@ def main():
    gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
 
    logger.debug(f'initializing video capture: {STREAM=}')
-   cap = cv2.VideoCapture(STREAM, cv2.CAP_FFMPEG)
+   cap = cv2.VideoCapture(STREAM, cv2.CAP_ANY)
 
    q = Queue(100)
    workers = []
    for i in range(FPS):
-      thread = Thread(target=worker)
+      thread = Thread(target=frame_processor, kwargs=dict(q=q, client=gl, detector=DETECTOR))
       workers.append(thread)
       thread.start()
 
@@ -92,10 +96,14 @@ def main():
    while True:
       if not cap.isOpened():
           logger.error(f'Cannot open stream {STREAM=}')
-          exit(-1)
+          exit(1)
       ret, frame = cap.read()
+      logger.debug(f'read() -> {ret=}, {frame=}')
+      if not ret:
+         logger.debug(f'continuing because {ret=}')
+         continue
       end = time.time()
-      logger.debug(f'captured a frame after {start-end}.')
+      logger.debug(f'captured a frame after {end-start}.')
       q.put(frame)
       start = time.time()
       time.sleep(delay)
