@@ -70,7 +70,6 @@ def main():
    FPS=args['--fps']
    try:
       FPS=int(FPS)
-      delay = 1/FPS
    except ValueError as e:
       logger.error(f'Invalid argument {FPS=}. Must be an integer.')
       exit(-1)
@@ -88,14 +87,18 @@ def main():
       workers.append(thread)
       thread.start()
 
+   delay = 1/FPS
+   start = time.time()
    while True:
-      start = time.time()
       if not cap.isOpened():
           logger.error(f'Cannot open stream {STREAM=}')
           exit(-1)
-
       ret, frame = cap.read()
+      end = time.time()
+      logger.debug(f'captured a frame after {start-end}.')
       q.put(frame)
+      start = time.time()
+      time.sleep(delay)
 
    cap.release()
 
