@@ -38,12 +38,12 @@ def main():
         logger.level = logging.DEBUG
         logger.debug(f'{args=}')
 
-    ENDPOINT=args['--endpoint']
+    ENDPOINT = args['--endpoint']
     if ENDPOINT == 'integ':
         ENDPOINT = INTEG
-    TOKEN=args['--token']
-    DETECTOR=args['--detector']
-    STREAM=args['--stream']
+    TOKEN = args['--token']
+    DETECTOR = args['--detector']
+    STREAM = args['--stream']
     try:
         STREAM=int(STREAM)
     except ValueError as e:
@@ -69,7 +69,6 @@ def main():
        is_success, buffer = cv2.imencode(".jpg", frame)
        logger.debug(f"buffer size is {len(buffer)}")
        io_buf = io.BytesIO(buffer)
-       #cv2.imwrite('temp.jpg', frame)
        end = time.time()
        logger.info(f"Time to prep image {1000*(end-start):.1f}ms")
        image_query = gl.submit_image_query(detector_id=DETECTOR, image=io_buf)
