@@ -61,19 +61,19 @@ def main():
        logger.level = logging.DEBUG
        logger.debug(f'{args=}')
 
-   ENDPOINT=args['--endpoint']
+   ENDPOINT = args['--endpoint']
    if ENDPOINT == 'integ':
        ENDPOINT = INTEG
-   TOKEN=args['--token']
-   DETECTOR=args['--detector']
-   STREAM=args['--stream']
+   TOKEN = args['--token']
+   DETECTOR = args['--detector']
+   STREAM = args['--stream']
    try:
-       STREAM=int(STREAM)
+       STREAM = int(STREAM)
    except ValueError as e:
        logger.debug(f'{STREAM=} is not an int, so it must be a filename or url.')
-   FPS=args['--fps']
+   FPS = args['--fps']
    try:
-      FPS=int(FPS)
+      FPS = int(FPS)
    except ValueError as e:
       logger.error(f'Invalid argument {FPS=}. Must be an integer.')
       exit(-1)
