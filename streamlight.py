@@ -46,7 +46,6 @@ def frame_processor(q:Queue, client:Groundlight, detector:str):
       is_success, buffer = cv2.imencode(".jpg", frame)
       logger.debug(f"buffer size is {len(buffer)}")
       io_buf = io.BytesIO(buffer)
-      #cv2.imwrite('temp.jpg', frame)
       end = time.time()
       logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
       image_query = client.submit_image_query(detector_id=detector, image=io_buf)
@@ -84,7 +83,7 @@ def main():
    logger.debug(f'initializing video capture: {STREAM=}')
    cap = cv2.VideoCapture(STREAM, cv2.CAP_ANY)
 
-   q = Queue(100)
+   q = Queue()
    workers = []
    for i in range(FPS):
       thread = Thread(target=frame_processor, kwargs=dict(q=q, client=gl, detector=DETECTOR))
