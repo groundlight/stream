@@ -52,7 +52,7 @@ def frame_processor(q:Queue, client:Groundlight, detector:str):
       image_query = client.submit_image_query(detector_id=detector, image=io_buf)
       start = end
       end = time.time()
-      logger.info(f"API time for image {1000*(start-end):.1f}ms")
+      logger.info(f"API time for image {1000*(end-start):.1f}ms")
 
 
 def main():
