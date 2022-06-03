@@ -37,17 +37,18 @@ INTEG = "https://device.integ.positronix.ai/device-api"
 def frame_processor(q:Queue, client:Groundlight, detector:str):
    logger.debug(f'frame_processor({q=}, {client=}, {detector=})')
    while True:
-      start = time.time()
       frame = q.get() # locks
+      # prepare image
+      start = time.time()
       logger.debug(f"Original {frame.shape=}")
       frame = cv2.resize(frame, (480,270))
       logger.debug(f"Resized {frame.shape=}")
-
       is_success, buffer = cv2.imencode(".jpg", frame)
       logger.debug(f"buffer size is {len(buffer)}")
       io_buf = io.BytesIO(buffer)
       end = time.time()
       logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
+      # send image query
       image_query = client.submit_image_query(detector_id=detector, image=io_buf)
       start = end
       end = time.time()
