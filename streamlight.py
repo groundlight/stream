@@ -100,7 +100,7 @@ def main():
       ret, frame = cap.read()
       logger.debug(f'read() -> {ret=}, {frame=}')
       if not ret:
-         logger.debug(f'continuing because {ret=}')
+         logger.warning(f'continuing because {ret=}')
          continue
       end = time.time()
       logger.debug(f'captured a frame after {end-start}.')
