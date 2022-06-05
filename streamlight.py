@@ -103,7 +103,7 @@ def main():
          logger.warning(f'continuing because {ret=}')
          continue
       end = time.time()
-      logger.debug(f'captured a frame after {end-start}.')
+      logger.info(f'captured a frame after {end-start}.')
       q.put(frame)
       start = time.time()
       time.sleep(delay)
