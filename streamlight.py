@@ -73,9 +73,10 @@ def main():
        logger.debug(f'{STREAM=} is not an int, so it must be a filename or url.')
    FPS = args['--fps']
    try:
-      FPS = int(FPS)
+      FPS = float(FPS)
+      logger.debug(f'{FPS=}')
    except ValueError as e:
-      logger.error(f'Invalid argument {FPS=}. Must be an integer.')
+      logger.error(f'Invalid argument {FPS=}. Must be a number.')
       exit(-1)
 
    logger.debug(f'creating groundlight client with {ENDPOINT=} and {TOKEN=}')
@@ -86,27 +87,33 @@ def main():
 
    q = Queue()
    workers = []
-   for i in range(FPS):
+   for i in range(round(FPS)):
       thread = Thread(target=frame_processor, kwargs=dict(q=q, client=gl, detector=DETECTOR))
       workers.append(thread)
       thread.start()
 
-   delay = 1/FPS
+   desired_delay = 1/FPS
    start = time.time()
    while True:
       if not cap.isOpened():
           logger.error(f'Cannot open stream {STREAM=}')
           exit(1)
       ret, frame = cap.read()
+      now = time.time()
+      logger.info(f'captured a frame after {now-start}.')
+      start = now
       logger.debug(f'read() -> {ret=}, {frame=}')
       if not ret:
          logger.warning(f'continuing because {ret=}')
          continue
-      end = time.time()
-      logger.info(f'captured a frame after {end-start}.')
       q.put(frame)
-      start = time.time()
-      time.sleep(delay)
+      now = time.time()
+      actual_delay = desired_delay - (now-start)
+      logger.debug(f'waiting for {actual_delay=} to capture the next frame.')
+      if actual_delay < 0:
+         logger.warning(f'Falling behind the desired {FPS=}! looks like putting frames into the worker queue is taking too long: {now-start}s. The queue contains {len(q)} frames.')
+         actual_delay = 0
+      time.sleep(actual_delay)
 
    cap.release()
 
