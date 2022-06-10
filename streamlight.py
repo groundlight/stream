@@ -82,6 +82,8 @@ def main():
     logger.debug(f'creating groundlight client with {ENDPOINT=} and {TOKEN=}')
     gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
 
+    grabber = FrameGrabber.create_grabber(stream=STREAM)
+
     logger.debug(f'initializing video capture: {STREAM=}')
     cap = cv2.VideoCapture(STREAM, cv2.CAP_ANY)
 
