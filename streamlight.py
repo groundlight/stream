@@ -24,6 +24,7 @@ import cv2
 import docopt
 import yaml
 
+from grabber import FrameGrabber
 from groundlight import Groundlight
 
 
@@ -81,12 +82,7 @@ def main():
 
     logger.debug(f'creating groundlight client with {ENDPOINT=} and {TOKEN=}')
     gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
-
     grabber = FrameGrabber.create_grabber(stream=STREAM)
-
-    logger.debug(f'initializing video capture: {STREAM=}')
-    cap = cv2.VideoCapture(STREAM, cv2.CAP_ANY)
-
     q = Queue()
     workers = []
     for i in range(round(FPS)):
@@ -97,16 +93,12 @@ def main():
     desired_delay = 1/FPS
     start = time.time()
     while True:
-       if not cap.isOpened():
-           logger.error(f'Cannot open stream {STREAM=}')
-           exit(1)
-       ret, frame = cap.read()
+       frame = grabber.grab()
        now = time.time()
        logger.info(f'captured a frame after {now-start}.')
        start = now
-       logger.debug(f'read() -> {ret=}, {frame=}')
-       if not ret:
-          logger.warning(f'continuing because {ret=}')
+       if frame is None:
+          logger.warning(f'continuing because {frame=}')
           continue
        q.put(frame)
        now = time.time()

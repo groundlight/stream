@@ -23,7 +23,7 @@ handlers:
     formatter: json
     stream: ext://sys.stdout
 loggers:
-  lipsum:
+  groundlight:
     level: DEBUG
     handlers: [json]
     propagate: false
