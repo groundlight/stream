@@ -24,7 +24,7 @@ handlers:
     stream: ext://sys.stdout
 loggers:
   groundlight:
-    level: DEBUG
+    level: INFO
     handlers: [json]
     propagate: false
 root:

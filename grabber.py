@@ -15,7 +15,7 @@ class FrameGrabber(metaclass=ABCMeta):
 
         if type(stream) == int:
             return DeviceFrameGrabber(stream=stream)
-        elif stream.start[:7] == 'rtsp://':
+        elif stream[:7] == 'rtsp://':
             logger.debug(f'found rtsp stream {stream=}')
             return RTSPFrameGrabber(stream=stream)
         else:
@@ -71,9 +71,9 @@ class RTSPFrameGrabber(FrameGrabber):
 
 
     def grab(self):
-        capture = VideoCapture(self.stream, cv2.CAP_ANY)
+        capture = cv2.VideoCapture(self.stream, cv2.CAP_ANY)
         if not capture.isOpened():
-            logger.error(f'could not open {stream=}')
+            logger.error(f'could not open {self.stream=}')
             return None
         else:
             ret, frame = capture.read()
