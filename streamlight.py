@@ -109,8 +109,6 @@ def main():
           actual_delay = 0
        time.sleep(actual_delay)
 
-    cap.release()
-
 
 if __name__ == '__main__':
     main()

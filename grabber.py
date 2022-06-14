@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import logging
+import time
 
 import cv2
 
@@ -53,10 +54,13 @@ class DeviceFrameGrabber(FrameGrabber):
         TODO: consider raising to avoid silently failing since this
         grabber cannot recover
         '''
+        start = time.time()
         ret, frame = self.capture.read()
         if not ret:
             logger.warning('could not read frame from {self.capture=}')
-        logger.info(f'grabbed {frame=}')
+        now = time.time()
+        logger.debug(f'grabbed {frame=}')
+        logger.info(f'grabbed frame in {now-start}s.')
         return frame
 
 
@@ -71,6 +75,7 @@ class RTSPFrameGrabber(FrameGrabber):
 
 
     def grab(self):
+        start = time.time()
         capture = cv2.VideoCapture(self.stream, cv2.CAP_ANY)
         if not capture.isOpened():
             logger.error(f'could not open {self.stream=}')
@@ -80,5 +85,7 @@ class RTSPFrameGrabber(FrameGrabber):
             if not ret:
                 logger.warning(f'could not read frame from {capture=}')
             capture.release()
-            logger.info(f'grabbed {frame=}')
+            now = time.time()
+            logger.debug(f'grabbed {frame=}')
+            logger.info(f'grabbed frame in {now-start}s.')
             return frame
