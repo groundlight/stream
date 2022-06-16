@@ -45,12 +45,12 @@ def frame_processor(q:Queue, client:Groundlight, detector:str):
        frame = cv2.resize(frame, (480,270))
        logger.debug(f"Resized {frame.shape=}")
        is_success, buffer = cv2.imencode(".jpg", frame)
-       logger.debug(f"buffer size is {len(buffer)}")
        io_buf = io.BytesIO(buffer)
        end = time.time()
        logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
        # send image query
        image_query = client.submit_image_query(detector_id=detector, image=io_buf)
+       logger.debug(f'{image_query=}')
        start = end
        end = time.time()
        logger.info(f"API time for image {1000*(end-start):.1f}ms")
@@ -85,7 +85,7 @@ def main():
     grabber = FrameGrabber.create_grabber(stream=STREAM)
     q = Queue()
     workers = []
-    for i in range(round(FPS)):
+    for i in range(int(max(FPS, 1))):
        thread = Thread(target=frame_processor, kwargs=dict(q=q, client=gl, detector=DETECTOR))
        workers.append(thread)
        thread.start()
