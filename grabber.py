@@ -12,11 +12,9 @@ class FrameGrabber(metaclass=ABCMeta):
 
     @staticmethod
     def create_grabber(stream=None):
-        if type(stream) not in [str, int]:
-            raise ValueError(f'invalid type for {stream=}')
         if type(stream) == int:
             return DeviceFrameGrabber(stream=stream)
-        elif stream[:7] == 'rtsp://':
+        elif type(stream) == str and stream[:7] == 'rtsp://':
             logger.debug(f'found rtsp stream {stream=}')
             return RTSPFrameGrabber(stream=stream)
         else:
@@ -58,9 +56,9 @@ class DeviceFrameGrabber(FrameGrabber):
         start = time.time()
         ret, frame = self.capture.read()
         if not ret:
-            logger.warning('could not read frame from {self.capture=}')
+            logger.error('could not read frame from {self.capture=}')
+            return
         now = time.time()
-        logger.debug(f'grabbed {frame=}')
         logger.info(f'grabbed frame in {now-start}s.')
         return frame
 
@@ -81,7 +79,6 @@ class RTSPFrameGrabber(FrameGrabber):
         logger.debug(f'initialized video capture with backend={self.capture.getBackendName()}')
         if not self.capture.isOpened():
             raise ValueError(f'could not open {self.stream=}')
-        logger.debug(f'initialized capture with buffer={self.capture.get(cv2.CAP_PROP_BUFFERSIZE)}')
         self.thread = Thread(target=self._drain, name='drain_thread')
         self.thread.start()
 
