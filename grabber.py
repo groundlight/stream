@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import logging
+from threading import Thread, Lock
 import time
 
 import cv2
@@ -65,33 +66,42 @@ class DeviceFrameGrabber(FrameGrabber):
 
 
 class RTSPFrameGrabber(FrameGrabber):
-    '''grabs frames from an rtsp stream. It attempts to return the latest
-    frame in the stream by opening the stream right before capturing;
-    otherwise each call to read would fetch the next frame in line rather
-    than the latest.'''
+    '''grabs the most recent frame from an rtsp stream. The RTSP capture
+    object has a non-configurable built-in buffer, so just calling
+    grab would return the oldest frame in the buffer rather than the
+    latest frame. This class usues a thread to continously drain the
+    buffer by grabbing and discarding frames and only returning the
+    latest frame when explicitly requested.
+    '''
 
     def __init__(self, stream=None):
-        for x in cv2.videoio_registry.getBackends():
-            print(x,cv2.videoio_registry.getBackendName(x))
-
+        self.lock = Lock()
         self.stream = stream
-        self.capture = cv2.VideoCapture(self.stream, cv2.CAP_FFMPEG)
+        self.capture = cv2.VideoCapture(self.stream)
         logger.debug(f'initialized video capture with backend={self.capture.getBackendName()}')
         if not self.capture.isOpened():
             raise ValueError(f'could not open {self.stream=}')
-        logger.debug(f'before updating buffer={self.capture.get(cv2.CAP_PROP_BUFFERSIZE)}')
-        self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 1.0)
         logger.debug(f'initialized capture with buffer={self.capture.get(cv2.CAP_PROP_BUFFERSIZE)}')
+        self.thread = Thread(target=self._drain, name='drain_thread')
+        self.thread.start()
 
 
     def grab(self):
         start = time.time()
-        ret = self.capture.grab()
-        logger.debug(f'grabbed a frame to empty buffer before reading new frame.')
-        ret, frame = self.capture.read()
-        if not ret:
-            logger.warning(f'could not read frame from {capture=}')
-        now = time.time()
-        logger.debug(f'grabbed {frame=}')
-        logger.info(f'grabbed frame in {now-start}s.')
-        return frame
+        with self.lock:
+            logger.debug(f'grabbed lock to read frame from buffer')
+            ret, frame = self.capture.read()
+            if not ret:
+                logger.error(f'could not read frame from {capture=}')
+            now = time.time()
+            logger.debug(f'grabbed {frame=}')
+            logger.info(f'grabbed frame in {now-start}s.')
+            return frame
+
+
+    def _drain(self):
+        logger.debug(f'starting thread to drain the video capture buffer')
+        while True:
+            with self.lock:
+                ret = self.capture.grab()
+                logger.debug(f'grabbed a frame to be discarded {ret=}')
