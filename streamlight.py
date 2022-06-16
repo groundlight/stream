@@ -15,6 +15,7 @@ options:
 import io
 import logging
 from logging.config  import dictConfig
+import math
 import os
 from queue import Queue
 import time
@@ -85,7 +86,7 @@ def main():
     grabber = FrameGrabber.create_grabber(stream=STREAM)
     q = Queue()
     workers = []
-    for i in range(int(max(FPS, 1))):
+    for i in range(math.ceil(FPS, 1)):
        thread = Thread(target=frame_processor, kwargs=dict(q=q, client=gl, detector=DETECTOR))
        workers.append(thread)
        thread.start()

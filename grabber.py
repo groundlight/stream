@@ -14,7 +14,6 @@ class FrameGrabber(metaclass=ABCMeta):
     def create_grabber(stream=None):
         if type(stream) not in [str, int]:
             raise ValueError(f'invalid type for {stream=}')
-
         if type(stream) == int:
             return DeviceFrameGrabber(stream=stream)
         elif stream[:7] == 'rtsp://':
@@ -42,7 +41,8 @@ class DeviceFrameGrabber(FrameGrabber):
     def __init__(self, stream=None):
         '''stream must be an int representing a device id'''
         try:
-            self.capture = cv2.VideoCapture(int(stream), cv2.CAP_ANY)
+            self.capture = cv2.VideoCapture(int(stream))
+            logger.debug(f'initialized video capture with backend={self.capture.getBackendName()}')
         except Exception as e:
             logging.error(f'could not initialize DeviceFrameGrabber: {stream=} must be an int corresponding to a valid device id.')
             raise e
@@ -69,7 +69,7 @@ class RTSPFrameGrabber(FrameGrabber):
     '''grabs the most recent frame from an rtsp stream. The RTSP capture
     object has a non-configurable built-in buffer, so just calling
     grab would return the oldest frame in the buffer rather than the
-    latest frame. This class usues a thread to continously drain the
+    latest frame. This class uses a thread to continously drain the
     buffer by grabbing and discarding frames and only returning the
     latest frame when explicitly requested.
     '''
@@ -90,7 +90,7 @@ class RTSPFrameGrabber(FrameGrabber):
         start = time.time()
         with self.lock:
             logger.debug(f'grabbed lock to read frame from buffer')
-            ret, frame = self.capture.read()
+            ret, frame = self.capture.read() # grab and decode since we want this frame
             if not ret:
                 logger.error(f'could not read frame from {capture=}')
             now = time.time()
@@ -103,5 +103,4 @@ class RTSPFrameGrabber(FrameGrabber):
         logger.debug(f'starting thread to drain the video capture buffer')
         while True:
             with self.lock:
-                ret = self.capture.grab()
-                logger.debug(f'grabbed a frame to be discarded {ret=}')
+                ret = self.capture.grab() # just grab and don't decode
