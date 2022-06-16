@@ -59,7 +59,7 @@ class DeviceFrameGrabber(FrameGrabber):
             logger.error('could not read frame from {self.capture=}')
             return
         now = time.time()
-        logger.info(f'grabbed frame in {now-start}s.')
+        logger.info(f'read the frame in {now-start}s.')
         return frame
 
 
@@ -91,8 +91,7 @@ class RTSPFrameGrabber(FrameGrabber):
             if not ret:
                 logger.error(f'could not read frame from {capture=}')
             now = time.time()
-            logger.debug(f'grabbed {frame=}')
-            logger.info(f'grabbed frame in {now-start}s.')
+            logger.info(f'read the frame in {now-start}s.')
             return frame
 
 

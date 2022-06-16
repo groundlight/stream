@@ -96,7 +96,7 @@ def main():
     while True:
        frame = grabber.grab()
        now = time.time()
-       logger.info(f'captured a frame after {now-start}.')
+       logger.info(f'captured a new frame after {now-start}.')
        start = now
        if frame is None:
           logger.warning(f'continuing because {frame=}')
