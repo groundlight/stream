@@ -42,22 +42,18 @@ class DeviceFrameGrabber(FrameGrabber):
             self.capture = cv2.VideoCapture(int(stream))
             logger.debug(f'initialized video capture with backend={self.capture.getBackendName()}')
         except Exception as e:
-            logging.error(f'could not initialize DeviceFrameGrabber: {stream=} must be an int corresponding to a valid device id.')
+            logger.error(f'could not initialize DeviceFrameGrabber: {stream=} must be an int corresponding to a valid device id.')
             raise e
 
 
     def grab(self):
         '''consistent with existing behavior based on VideoCapture.read()
         which may return None when it cannot read a frame.
-
-        TODO: consider raising to avoid silently failing since this
-        grabber cannot recover
         '''
         start = time.time()
         ret, frame = self.capture.read()
         if not ret:
-            logger.error('could not read frame from {self.capture=}')
-            return
+            raise RuntimeWarning('could not read frame from {self.capture=}')
         now = time.time()
         logger.info(f'read the frame in {now-start}s.')
         return frame

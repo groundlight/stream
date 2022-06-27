@@ -86,7 +86,7 @@ def main():
     grabber = FrameGrabber.create_grabber(stream=STREAM)
     q = Queue()
     workers = []
-    for i in range(math.ceil(FPS, 1)):
+    for i in range(math.ceil(FPS)):
        thread = Thread(target=frame_processor, kwargs=dict(q=q, client=gl, detector=DETECTOR))
        workers.append(thread)
        thread.start()
