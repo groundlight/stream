@@ -31,9 +31,8 @@ sdk](https://pypi.org/project/groundlight/) which is published under
 the MIT license
 
 As with all Docker images, this image also contains other software
-which may be under other licenses (along with any direct or indirect
-dependencies of the primary software being contained) all of which is
-published under open source licenses.
+which may be under other open source licenses along with any direct or
+indirect dependencies of the primary software being contained.
 
 As for any pre-built image usage, it is the image user's
 responsibility to ensure that any use of this image complies with any
