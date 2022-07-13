@@ -10,7 +10,7 @@ options:
   -h, --help             show this message.
   -s, --stream=STREAM    id, filename or URL of a video stream (e.g. rtsp://host:port/script?params) [default: 0]
   -t, --token=TOKEN      api token to authenticate with the groundlight api
-  -v, --verbose
+  -v, --verbose          enable debug logs
   --noresize             upload images in full original resolution instead of 480x272
 '''
 import io
