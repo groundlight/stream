@@ -25,3 +25,16 @@ Start sending frames and getting predictions and labels using your own API token
 ``` shell
 docker run groundlight/stream -t api_29imEXAMPLE -d 772d5b0EXAMPLE -s https://www.youtube.com/watch?v=21X5lGlDOfg -f 1
 ```
+# license
+This image includes the [groundlight
+sdk](https://pypi.org/project/groundlight/) which is published under
+the MIT license
+
+As with all Docker images, this image also contains other software
+which may be under other licenses (along with any direct or indirect
+dependencies of the primary software being contained) all of which is
+published under open source licenses.
+
+As for any pre-built image usage, it is the image user's
+responsibility to ensure that any use of this image complies with any
+relevant licenses for all software contained within.
