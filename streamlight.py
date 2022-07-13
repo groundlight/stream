@@ -90,8 +90,6 @@ def main():
     grabber = FrameGrabber.create_grabber(stream=STREAM, fps_target=FPS)
     q = Queue()
     workers = []
-    '''create worker threads one per requested FPS.
-    use max of 10 if FPS is zero (max rate). there may be a better number to use'''
     if FPS == 0:
        worker_thread_count = 10
     else:
