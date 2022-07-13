@@ -23,5 +23,5 @@ options:
 ```
 Start sending frames and getting predictions and labels using your own API token and detector ID
 ``` shell
-docker run groundulight/stream -t api_29imEXAMPLE -d 772d5b0EXAMPLE -s https://www.youtube.com/watch?v=21X5lGlDOfg -f 1
+docker run groundlight/stream -t api_29imEXAMPLE -d 772d5b0EXAMPLE -s https://www.youtube.com/watch?v=21X5lGlDOfg -f 1
 ```
