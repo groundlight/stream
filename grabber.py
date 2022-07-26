@@ -32,6 +32,11 @@ class FrameGrabber(metaclass=ABCMeta):
         elif type(stream) == str and stream[:4] == 'http':
             logger.debug(f'found image url {stream=}')
             return ImageURLFrameGrabber(url=stream, **kwargs)
+        # For identifying if a stream is a sourcing from a directory
+        elif type(stream) == str and Path(stream).is_dir():
+            logger.debug(f'found directory stream {stream=}')
+            print("recognizes that it's a directory")
+            return DirectoryFrameGrabber(stream=stream, **kwargs)
         else:
             raise ValueError(f'cannot create a frame grabber from {stream=}')
 
@@ -39,6 +44,58 @@ class FrameGrabber(metaclass=ABCMeta):
     @abstractmethod
     def grab():
         pass
+
+# For stream that sources from a directory that contains image files
+class DirectoryFrameGrabber(FrameGrabber):
+
+    def __init__(self, stream=None, fps_target = 0):
+        '''stream must be a directory'''
+        try:
+            #what does "try" do?
+            import os #not sure if I need this
+            dir_list = stream #gets list of filenames in a given directory, what if its a directory with folders in it
+            '''
+            self.capture = cv2.VideoCapture(stream)
+            logger.debug(f'initialized video capture with backend={self.capture.getBackendName()}')
+            ret, frame = self.capture.read()
+            self.fps_source = round(self.capture.get(cv2.CAP_PROP_FPS), 2)
+            self.fps_target = fps_target
+            logger.debug(f'source FPS : {self.fps_source=}  / target FPS : {self.fps_target}')
+            #self.remainder = 0.0
+        except Exception as e:
+            logger.error(f'could not initialize DeviceFrameGrabber: {stream=} filename is invalid or read error')
+            raise e
+            '''
+
+    def grab(self):
+        '''decimates stream to self.fps_target, 0 fps to use full original stream.
+        consistent with existing behavior based on VideoCapture.read()
+        which may return None when it cannot read a frame.
+        '''
+for i in range(len(dir_list)): #this indentation doesn't seem right
+    image_query = gl.submit_image_query(detector_id=detector, image=stream) 
+    #not sure what to put for image because want to loop over the list of files but the syntax for the API says path/to/filename
+
+        '''
+        start = time.time()
+
+        if self.fps_target > 0 and self.fps_target < self.fps_source :
+            drop_frames = (self.fps_source / self.fps_target) - 1 + self.remainder
+            for i in range(round(drop_frames)):
+                ret, frame = self.capture.read()
+            self.remainder = round(drop_frames - round(drop_frames), 2)
+            logger.debug(f'dropped {round(drop_frames)} frames to meet {self.fps_target} FPS target from {self.fps_source} FPS source (off by {self.remainder} frames)')
+        else:
+            logger.debug(f'frame dropping disabled for {self.fps_target} FPS target from {self.fps_source} FPS source')
+
+        ret, frame = self.capture.read()
+        if not ret:
+            raise RuntimeWarning('could not read frame from {self.capture=}.  possible end of file.')
+        now = time.time()
+        logger.info(f'read the frame in {now-start}s.')
+        '''
+        return frame
+#-----------------------------------------------------------------------------------------------------------
 
 class FileStreamFrameGrabber(FrameGrabber):
 
