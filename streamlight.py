@@ -202,7 +202,7 @@ def main():
 
          if motion_detect:
             if m.motion_detected(frame):
-               logger.debug(f"Motion detected")
+               logger.info(f"Motion detected")
                motion_start = time.time()
                add_frame_to_queue = True
             elif time.time() - motion_start < post_motion_time:
