@@ -221,7 +221,6 @@ def main():
              resize_if_needed(frame, resize_width, resize_height)
              q.put(frame)
              last_frame_time = time.time()
-             logger.debug("added frame to queue!")
 
          now = time.time()
          if desired_delay > 0:
