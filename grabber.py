@@ -124,9 +124,9 @@ class RTSPFrameGrabber(FrameGrabber):
         self.lock = Lock()
         self.stream = stream
         self.capture = cv2.VideoCapture(self.stream)
-        logger.debug(f'initialized video capture with backend={self.capture.getBackendName()}')
+        logger.debug(f'initialized RTSP video capture with backend={self.capture.getBackendName()}')
         if not self.capture.isOpened():
-            raise ValueError(f'could not open {self.stream=}')
+            raise ValueError(f'could not open RTSP stream {self.stream=}')
         self.thread = Thread(target=self._drain, name='drain_thread')
         self.thread.start()
 
@@ -137,7 +137,7 @@ class RTSPFrameGrabber(FrameGrabber):
             logger.debug(f'grabbed lock to read frame from buffer')
             ret, frame = self.capture.read() # grab and decode since we want this frame
             if not ret:
-                logger.error(f'could not read frame from {self.capture=}')
+                logger.error(f'could not read frame from RTSP {self.capture=}')
             now = time.time()
             logger.debug(f'read the frame in {1000*(now-start):.1f}ms')
             return frame
@@ -148,6 +148,7 @@ class RTSPFrameGrabber(FrameGrabber):
         while True:
             with self.lock:
                 ret = self.capture.grab() # just grab and don't decode
+            time.sleep(1.0/120)
 
 
 class YouTubeFrameGrabber(FrameGrabber):

@@ -188,12 +188,24 @@ def main():
     start = time.time()
 
     last_frame_time = time.time()
+    MIN_BACKOFF_DELAY = 0.1
+    MAX_BACKOFF_DELAY = 60  # at which point we consider the grabber failed
     try:
+      backoff_delay = MIN_BACKOFF_DELAY
       while True:
          frame = grabber.grab()
          if frame is None:
-            logger.warning(f"No frame captured! {frame=}")
+            if backoff_delay < MAX_BACKOFF_DELAY:
+                logger.warning(f"Unable to capture frame.  Will retry after delay of {backoff_delay:.1}s")
+                time.sleep(backoff_delay)
+                backoff_delay *= 2
+            else:
+                logger.error(f"Consistently unable to capture frame.  Restarting grabber")
+                backoff_delay = MIN_BACKOFF_DELAY
+                grabber = FrameGrabber.create_grabber(stream=STREAM, fps_target=FPS)
             continue
+        else:
+            backoff_delay = MIN_BACKOFF_DELAY
 
 
          now = time.time()
