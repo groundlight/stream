@@ -167,10 +167,10 @@ def main():
         logger.info(f"Motion detection disabled.")
 
     logger.debug(f"creating groundlight client with {ENDPOINT=} and {TOKEN=}")
-    gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
-    grabber = FrameGrabber.create_grabber(stream=STREAM, fps_target=FPS)
-    q = Queue()
     tc = ThreadControl()
+    gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
+    grabber = FrameGrabber.create_grabber(stream=STREAM, fps_target=FPS, threadcontrol=tc)
+    q = Queue()
     if motion_detect:
         m = MotionDetector(pct_threshold = motion_threshold)
     workers = []
@@ -244,8 +244,9 @@ def main():
                 time.sleep(actual_delay)
 
     except KeyboardInterrupt:
-        logger.info("exiting with KeyboardInterrupt.")
+        logger.info("exiting with KeyboardInterrupt.  Shutting down threads.")
         tc.force_exit()
+        time.sleep(1)  # give threads a chance to notice tc
         exit(-1)
 
 if __name__ == "__main__":

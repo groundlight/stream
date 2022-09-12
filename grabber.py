@@ -22,7 +22,7 @@ class FrameGrabber(metaclass=ABCMeta):
             return DeviceFrameGrabber(stream=stream)
         elif type(stream) == str and stream[:4] == 'rtsp':
             logger.debug(f'found rtsp stream {stream=}')
-            return RTSPFrameGrabber(stream=stream)
+            return RTSPFrameGrabber(stream=stream, threadcontrol=kwargs.get('threadcontrol',None))
         elif type(stream) == str and stream.find("youtube.com") > 0:
             logger.debug(f'found youtube stream {stream=}')
             return YouTubeFrameGrabber(stream=stream)
@@ -120,10 +120,11 @@ class RTSPFrameGrabber(FrameGrabber):
     latest frame when explicitly requested.
     '''
 
-    def __init__(self, stream=None):
+    def __init__(self, stream=None, threadcontrol=None):
         self.lock = Lock()
         self.stream = stream
         self.capture = cv2.VideoCapture(self.stream)
+        self.threadcontrol = threadcontrol
         logger.debug(f'initialized RTSP video capture with backend={self.capture.getBackendName()}')
         if not self.capture.isOpened():
             raise ValueError(f'could not open RTSP stream {self.stream=}')
@@ -146,6 +147,9 @@ class RTSPFrameGrabber(FrameGrabber):
     def _drain(self):
         logger.debug(f'starting thread to drain the video capture buffer')
         while True:
+            if self.threadcontrol and self.threadcontrol.exit_all_threads:
+                logger.debug("_drain: threadcontrol shutting down")
+                return
             with self.lock:
                 ret = self.capture.grab() # just grab and don't decode
             time.sleep(1.0/120)
