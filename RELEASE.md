@@ -49,8 +49,14 @@ Server:
  Registry: https://index.docker.io/v1/
  ...
 ```
-
 ## push
+You need to be part of the [devs
+team](https://hub.docker.com/orgs/groundlight/teams/devs/members) in
+the groundlight organization to be able to push images to the
+streamlight repository. Ask to be added in the #engineering channel on
+slack. Note: this is a one time step and won't be necessary once we
+push images from a github action instead of this manual process.
+
 push using the actual tag created previous instead of just `test`
 ``` shell
 docker push groundlight/stream:test
