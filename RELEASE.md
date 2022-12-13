@@ -6,7 +6,8 @@ contains info that can be used on dockerhub and pypi for potential
 users.
 
 # steps
-We follow a standard process of build, tag, auth, push where the only external dependency is dockerhub
+We follow a standard process of build, tag, auth, push where the only
+external dependency is dockerhub
 
 ## build
 from the root of this repository
@@ -18,12 +19,12 @@ we need to tag the locally build image to include the full url of the
 registry to which it will be pushed
 
 ``` shell
-docker tag stream:local https://dockerhub.com/groundlight/stream:test
+docker tag stream:local groundlight/stream:test
 ```
 
 replace `test` with the actual release version. See [recent
 tags](https://hub.docker.com/repository/docker/groundlight/stream/tags?page=1&ordering=last_updated)
-to pick an appropriate [semantic version](https://semver.org/)
+and pick an appropriate [semantic version](https://semver.org/)
 
 ## authenticate
 
@@ -50,3 +51,10 @@ Server:
 ```
 
 ## push
+push using the actual tag created previous instead of just `test`
+``` shell
+docker push groundlight/stream:test
+```
+you can verify that the new image was pushed on the
+[tags](https://hub.docker.com/repository/docker/groundlight/stream/tags?page=1&ordering=last_updated)
+page
