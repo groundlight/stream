@@ -27,12 +27,26 @@ jobs:
 
       - name: Set up QEMU for multi-arch builds
         uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
+      - name: Set up Docker Buildx for multi-arch
         id: buildx
         uses: docker/setup-buildx-action@v2
       
-      - name: Build and maybe push Docker image
+      - name: Build one arch first to test.
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Run basic test
+        run: |
+          set -ex
+          # Just check that python command runs at all
+          docker run ${DOCKER_METADATA_OUTPUT_TAGS} --help
+
+      - name: Build multi-arch and push
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -40,3 +54,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
