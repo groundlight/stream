@@ -39,6 +39,8 @@ jobs:
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Specify output so we can run a test against it
+          outputs: type=docker
 
       - name: Run basic test
         run: |
