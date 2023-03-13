@@ -13,7 +13,7 @@ $ docker run groundlight/stream --help
 Captures frames from a video device, file or stream and sends frames as
 image queries to a configured detector using the Groundlight API
 
-usage: streamlight [options] -t TOKEN -d DETECTOR
+usage: stream [options] -t TOKEN -d DETECTOR
 
 options:
   -d, --detector=ID      detector id to which the image queries are sent
