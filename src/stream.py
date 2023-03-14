@@ -194,14 +194,14 @@ def main():
     last_frame_time = time.time()
     try:
         while True:
+            start = time.time()
             frame = grabber.grab()
             if frame is None:
                 logger.warning(f"No frame captured! {frame=}")
                 continue
 
             now = time.time()
-            logger.debug(f"captured a new frame after {now-start:.3}s. of size {frame.shape=} ")
-            start = now
+            logger.debug(f"captured a new frame after {now-start:.3f}s of size {frame.shape=} ")
 
             if motion_detect:
                 if m.motion_detected(frame):
@@ -214,7 +214,7 @@ def main():
                     )
                     add_frame_to_queue = True
                 elif time.time() - last_frame_time > max_frame_interval:
-                    logger.debug(f"adding frame after {(time.time()-last_frame_time):.3}s for {max_frame_interval=}s")
+                    logger.debug(f"adding frame after {(time.time()-last_frame_time):.3}s because {max_frame_interval=}s")
                     add_frame_to_queue = True
                 else:
                     logger.debug(f"skipping frame per motion detection settings")
@@ -230,13 +230,13 @@ def main():
             now = time.time()
             if desired_delay > 0:
                 actual_delay = desired_delay - (now - start)
-                logger.debug(f"waiting for {actual_delay=:.3} to capture the next frame.")
                 if actual_delay < 0:
                     logger.warning(
-                        f"Falling behind the desired {FPS=}! looks like putting frames into the worker queue is taking too long: {(now-start):.3}s. The queue contains {q.qsize()} frames."
+                        f"Falling behind the desired {FPS=}.  Either grabbing frames or putting them into output queue (length={q.qsize()}) is taking too long."
                     )
-                    actual_delay = 0
-                time.sleep(actual_delay)
+                else:
+                    logger.debug(f"waiting for {actual_delay=:.3}s to capture the next frame.")
+                    time.sleep(actual_delay)
 
     except KeyboardInterrupt:
         logger.info("exiting with KeyboardInterrupt.")
