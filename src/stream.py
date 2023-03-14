@@ -14,7 +14,7 @@ options:
   -w, --width=WIDTH      resize images to w pixels wide (and scale height proportionately if not set explicitly)
   -y, --height=HEIGHT    resize images to y pixels high (and scale width proportionately if not set explicitly)
   -m, --motion                 enable motion detection with pixel change threshold percentage (disabled by default)
-  -r, --threshold=THRESHOLD    set detection threshold for motion detection [default: 1]
+  -r, --threshold=THRESHOLD    detection threshold for motion detection - percent of changed pixels [default: 1]
   -p, --postmotion=POSTMOTION  minimum number of seconds to capture for every motion detection [default: 1]
   -i, --maxinterval=MAXINT     maximum number of seconds before sending frames even without motion [default: 1000]
 """
@@ -149,9 +149,9 @@ def main():
         POST_MOTION = args["--postmotion"]
         MAX_INTERVAL = args["--maxinterval"]
         try:
-            motion_threshold = int(MOTION_THRESHOLD)
+            motion_threshold = float(MOTION_THRESHOLD)
         except ValueError as e:
-            logger.error(f"Invalid arguement {MOTION_THRESHOLD=} must be an integer")
+            logger.error(f"Invalid arguement {MOTION_THRESHOLD=} must be a number")
             exit(-1)
         try:
             post_motion_time = float(POST_MOTION)
