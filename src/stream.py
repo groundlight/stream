@@ -214,7 +214,9 @@ def main():
                     )
                     add_frame_to_queue = True
                 elif time.time() - last_frame_time > max_frame_interval:
-                    logger.debug(f"adding frame after {(time.time()-last_frame_time):.3}s because {max_frame_interval=}s")
+                    logger.debug(
+                        f"adding frame after {(time.time()-last_frame_time):.3}s because {max_frame_interval=}s"
+                    )
                     add_frame_to_queue = True
                 else:
                     logger.debug(f"skipping frame per motion detection settings")
