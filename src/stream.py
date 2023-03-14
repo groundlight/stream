@@ -103,9 +103,8 @@ def resize_if_needed(frame, width: int, height: int):
     frame = cv2.resize(frame, (target_width, target_height))
 
 
-def crop_frame(frame, crop_region:Tuple[float,float,float,float]):
-    """Returns a cropped version of the frame.
-    """
+def crop_frame(frame, crop_region: Tuple[float, float, float, float]):
+    """Returns a cropped version of the frame."""
     (img_height, img_width, _) = frame.shape
     x1 = int(img_width * crop_region[0])
     y1 = int(img_height * crop_region[1])
@@ -116,7 +115,7 @@ def crop_frame(frame, crop_region:Tuple[float,float,float,float]):
     return out
 
 
-def parse_crop_string(crop_string:str) -> Tuple[float,float,float,float]:
+def parse_crop_string(crop_string: str) -> Tuple[float, float, float, float]:
     """Parses a string like "0.25,0.25,0.5,0.5" to a tuple like (0.25,0.25,0.5,0.5)
     Also validates that numbers are between 0-1, and that it doesn't go off the edge.
     """
@@ -126,17 +125,17 @@ def parse_crop_string(crop_string:str) -> Tuple[float,float,float,float]:
     numbers = tuple([float(n) for n in parts])
 
     for n in numbers:
-        if (n<0) or (n>1):
+        if (n < 0) or (n > 1):
             raise ValueError("All numbers must be between 0 and 1, showing relative position in image")
 
     if numbers[0] + numbers[2] > 1.0:
-         raise ValueError("Invalid crop: x+w is greater than 1.")
+        raise ValueError("Invalid crop: x+w is greater than 1.")
     if numbers[1] + numbers[3] > 1.0:
-         raise ValueError("Invalid crop: y+h is greater than 1.")
+        raise ValueError("Invalid crop: y+h is greater than 1.")
 
     if numbers[2] * numbers[3] == 0:
-         raise ValueError("Width and Height must both be >0")
-        
+        raise ValueError("Width and Height must both be >0")
+
     return numbers
 
 

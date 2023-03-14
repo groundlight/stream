@@ -4,8 +4,8 @@ from stream import parse_crop_string
 
 
 def test_good_crop():
-    assert parse_crop_string("0,0,1,1") == (0,0,1,1)
-    assert parse_crop_string("0.5,0,0.5,1") == (0.5,0,0.5,1)
+    assert parse_crop_string("0,0,1,1") == (0, 0, 1, 1)
+    assert parse_crop_string("0.5,0,0.5,1") == (0.5, 0, 0.5, 1)
 
     with pytest.raises(ValueError):
         # too short
@@ -38,6 +38,3 @@ def test_good_crop():
     with pytest.raises(ValueError):
         # zero size
         parse_crop_string("0,0,1,0")
-
-
-
