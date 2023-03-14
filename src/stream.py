@@ -112,7 +112,7 @@ def crop_frame(frame, crop_region:Tuple[float,float,float,float]):
     x2 = x1 + int(img_width * crop_region[2])
     y2 = y1 + int(img_height * crop_region[3])
 
-    out = frame[x1:x2, y1:y2, :]
+    out = frame[y1:y2, x1:x2, :]
     return out
 
 
@@ -162,6 +162,8 @@ def main():
 
     if args.get("--crop"):
         crop_region = parse_crop_string(args["--crop"])
+    else:
+        crop_region = None
 
     ENDPOINT = args["--endpoint"]
     TOKEN = args["--token"]
