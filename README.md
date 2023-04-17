@@ -1,6 +1,6 @@
 # Groundlight Stream Processor
 
-A containerized python application that uses the [groundlight](https://www.groundlight.ai/) SDK to
+A containerized python application that uses the [Groundlight](https://www.groundlight.ai/) [Python SDK](https://github.com/groundlight/python-sdk) to
 process frames from a video file, device, or stream.
 
 ## Useage
@@ -31,7 +31,7 @@ options:
   -i, --maxinterval=MAXINT     maximum number of seconds before sending frames even without motion [default: 1000]
 ```
 
-Start sending frames and getting predictions and labels using your own API token and detector ID
+Start sending frames and getting predictions and labels using your own API token and detector ID:
 
 ``` shell
 docker run groundlight/stream \
@@ -99,6 +99,6 @@ Replace the RTSP URL with the one specific to your camera or streaming device.
 
 ## Further Reading
 
-* [Camera types](https://github.com/groundlight/stream/blob/main/CAMERAS.md) shows how to get RTSP stream URLs for many popular camera brands
+* [Camera types](https://github.com/groundlight/stream/blob/main/CAMERAS.md) shows how to get RTSP stream URLs for many popular camera brands.
 * [Developing](https://github.com/groundlight/stream/blob/main/DEVELOPING.md) discusses how this code is built and maintained.
 
