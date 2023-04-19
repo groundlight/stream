@@ -5,7 +5,7 @@ process frames from a video file, device, or stream.
 
 ## Download
 
-The system is easy to use on any system with Docker installed. 
+This application is easy to use on any system with Docker installed. 
 
 ```shell
 $ docker pull groundlight/stream
