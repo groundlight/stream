@@ -3,9 +3,17 @@
 A containerized python application that uses the [Groundlight](https://www.groundlight.ai/) [Python SDK](https://github.com/groundlight/python-sdk) to
 process frames from a video file, device, or stream.
 
+## Download
+
+The system is easy to use on any system with Docker installed. 
+
+```shell
+$ docker pull groundlight/stream
+```
+
 ## Useage
 
-The system is easy to use on any system with Docker installed.  Command line options are displayed like:
+Command line options are displayed like:
 
 ``` shell
 $ docker run groundlight/stream --help
