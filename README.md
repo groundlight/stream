@@ -59,26 +59,20 @@ docker run -v /path/to/video:/videos groundlight/stream \
 This command mounts the `/path/to/video` directory on your host machine to the `/videos` directory inside the Docker container. The `-s` parameter is then set to the path of the MP4 file inside the container (`/videos/video.mp4`).
 
 ## Using a YouTube URL
-
-To use a YouTube video as a source, you first need to obtain a direct URL to the video stream. YouTube does not provide RTSP URLs, so you'll need a tool like `youtube-dl` to extract the direct video URL. Install `youtube-dl` following the instructions on its [GitHub page](https://github.com/ytdl-org/youtube-dl#installation).
-
-Once you have `youtube-dl` installed, extract the direct video URL:
+YouTube URLs can be used to send frames to a detector by passing the video URL to the `-s` parameter:
 
 ``` shell
-youtube-dl -g "https://www.youtube.com/watch?v=210EXAMPLE"
-```
+# Live Video from the International Space Station (Official NASA Stream)
+YOUTUBE_URL="https://www.youtube.com/watch?v=xAieE-QtOeM"
 
-Replace the YouTube URL with the video you want to use. The output will be a direct video URL that you can pass to the `-s` parameter:
-
-``` shell
 docker run groundlight/stream \
     -t api_29imEXAMPLE \
     -d det_2MiD5Elu8bza7sil9l7KPpr694a \
-    -s "<direct_video_url>" \
+    -s "${YOUTUBE_URL}" \
     -f 1
 ```
 
-Replace `<direct_video_url>` with the URL obtained from `youtube-dl`.
+Replace `YOUTUBE_URL` with the url of the YouTube video you are interested in.
 
 ## Connecting an RTSP Stream
 
@@ -101,4 +95,3 @@ Replace the RTSP URL with the one specific to your camera or streaming device.
 
 * [Camera types](CAMERAS.md) shows how to get RTSP stream URLs for many popular camera brands.
 * [Developing](DEVELOPING.md) discusses how this code is built and maintained.
-
