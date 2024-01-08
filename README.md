@@ -5,7 +5,7 @@ process frames from a video file, device, or stream.
 
 ## Download
 
-This application is easy to use on any system with Docker installed. 
+This application is easy to use on any system with Docker installed.
 
 ```shell
 $ docker pull groundlight/stream
@@ -29,6 +29,7 @@ options:
   -f, --fps=FPS          number of frames to capture per second. 0 to use maximum rate possible. [default: 5]
   -h, --help             show this message.
   -s, --stream=STREAM    id, filename or URL of a video stream (e.g. rtsp://host:port/script?params OR video.mp4 OR *.jpg) [default: 0]
+  -x, --streamtype=TYPE  (optional) type of stream. One of [device, directory, rtsp, youtube, file, image_url] [default: auto-infer]
   -t, --token=TOKEN      API token to authenticate with the Groundlight API
   -v, --verbose          enable debug logs
   -w, --width=WIDTH      resize images to w pixels wide (and scale height proportionately if not set explicitly)
