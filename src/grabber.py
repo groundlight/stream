@@ -17,28 +17,30 @@ logger = logging.getLogger("groundlight.stream")
 
 class FrameGrabber(metaclass=ABCMeta):
     @staticmethod
-    def create_grabber(stream=None, streamtype=None, **kwargs):
+    def create_grabber(stream=None, stream_type=None, **kwargs):
         logger.debug(f"Input {stream=} (type {type(stream)}")
-        if (type(stream) == int and not streamtype) or streamtype == "device":
+        if (type(stream) == int and not streamtype) or stream_type == "device":
             logger.debug("Looking for camera {stream=}")
             return DeviceFrameGrabber(stream=stream)
-        elif ((type(stream) == str) and (stream.find("*") != -1) and not streamtype) or streamtype == "directory":
+        elif ((type(stream) == str) and (stream.find("*") != -1) and not stream_type) or stream_type == "directory":
             logger.debug(f"Found wildcard file {stream=}")
             return DirectoryFrameGrabber(stream=stream)
-        elif ((type(stream) == str) and (stream[:4] == "rtsp") and not streamtype) or streamtype == "rtsp":
+        elif ((type(stream) == str) and (stream[:4] == "rtsp") and not stream_type) or stream_type == "rtsp":
             logger.debug(f"found rtsp stream {stream=}")
             return RTSPFrameGrabber(stream=stream)
-        elif ((type(stream) == str) and (stream.find("youtube.com") > 0) and not streamtype) or streamtype == "youtube":
+        elif (
+            (type(stream) == str) and (stream.find("youtube.com") > 0) and not stream_type
+        ) or stream_type == "youtube":
             logger.debug(f"found youtube stream {stream=}")
             return YouTubeFrameGrabber(stream=stream)
-        elif ((type(stream) == str) and Path(stream).is_file() and not streamtype) or streamtype == "file":
+        elif ((type(stream) == str) and Path(stream).is_file() and not stream_type) or stream_type == "file":
             logger.debug(f"found filename stream {stream=}")
             return FileStreamFrameGrabber(stream=stream, **kwargs)
-        elif ((type(stream) == str) and (stream[:4] == "http") and not streamtype) or streamtype == "image_url":
+        elif ((type(stream) == str) and (stream[:4] == "http") and not stream_type) or stream_type == "image_url":
             logger.debug(f"found image url {stream=}")
             return ImageURLFrameGrabber(url=stream, **kwargs)
         else:
-            raise ValueError(f"cannot create a frame grabber from {stream=} {streamtype=}")
+            raise ValueError(f"cannot create a frame grabber from {stream=} {stream_type=}")
 
     @abstractmethod
     def grab():

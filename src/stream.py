@@ -9,7 +9,7 @@ options:
   -f, --fps=FPS          number of frames to capture per second. 0 to use maximum rate possible. [default: 5]
   -h, --help             show this message.
   -s, --stream=STREAM    id, filename or URL of a video stream (e.g. rtsp://host:port/script?params OR movie.mp4 OR *.jpg) [default: 0]
-  -o, --streamtype=TYPE  (optional) type of stream. One of [device, directory, rtsp, youtube, file, image_url] [default: auto-infer]
+  -x, --streamtype=TYPE  (optional) type of stream. One of [device, directory, rtsp, youtube, file, image_url] [default: auto-infer]
   -t, --token=TOKEN      api token to authenticate with the groundlight api
   -v, --verbose          enable debug logs
   -w, --width=WIDTH      resize images to w pixels wide (and scale height proportionately if not set explicitly)
@@ -169,12 +169,17 @@ def main():
     DETECTOR = args["--detector"]
 
     STREAM = args["--stream"]
-    STREAM_TYPE = args.get("--type")
+    STREAM_TYPE = args.get("--streamtype")
     if STREAM_TYPE is None:
         try:
             STREAM = int(STREAM)
         except ValueError as e:
             logger.debug(f"{STREAM=} is not an int.  Treating as a filename or url.")
+    else:
+        STREAM_TYPE = STREAM_TYPE.lower()
+        if STREAM_TYPE not in ["device", "directory", "rtsp", "youtube", "file", "image_url"]:
+            raise ValueError(f"Invalid stream type {STREAM_TYPE=}")
+        logger.debug(f"{STREAM_TYPE=}")
 
     FPS = args["--fps"]
     try:
