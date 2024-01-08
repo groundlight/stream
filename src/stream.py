@@ -36,8 +36,9 @@ from xmlrpc.client import Boolean
 import cv2
 import docopt
 import yaml
-from grabber import FrameGrabber
 from groundlight import Groundlight
+
+from grabber import FrameGrabber
 from motion import MotionDetector
 
 fname = os.path.join(os.path.dirname(__file__), "logging.yaml")
