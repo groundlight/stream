@@ -2,7 +2,6 @@ import fnmatch
 import logging
 import os
 import random
-import re
 import time
 import urllib
 from abc import ABCMeta, abstractmethod
@@ -18,28 +17,28 @@ logger = logging.getLogger("groundlight.stream")
 
 class FrameGrabber(metaclass=ABCMeta):
     @staticmethod
-    def create_grabber(stream=None, **kwargs):
+    def create_grabber(stream=None, streamtype=None, **kwargs):
         logger.debug(f"Input {stream=} (type {type(stream)}")
-        if type(stream) == int:
+        if (type(stream) == int and not streamtype) or streamtype == "device":
             logger.debug("Looking for camera {stream=}")
             return DeviceFrameGrabber(stream=stream)
-        elif (type(stream) == str) and (stream.find("*") != -1):
+        elif ((type(stream) == str) and (stream.find("*") != -1) and not streamtype) or streamtype == "directory":
             logger.debug(f"Found wildcard file {stream=}")
             return DirectoryFrameGrabber(stream=stream)
-        elif (type(stream) == str) and (stream[:4] == "rtsp"):
+        elif ((type(stream) == str) and (stream[:4] == "rtsp") and not streamtype) or streamtype == "rtsp":
             logger.debug(f"found rtsp stream {stream=}")
             return RTSPFrameGrabber(stream=stream)
-        elif (type(stream) == str) and (stream.find("youtube.com") > 0):
+        elif ((type(stream) == str) and (stream.find("youtube.com") > 0) and not streamtype) or streamtype == "youtube":
             logger.debug(f"found youtube stream {stream=}")
             return YouTubeFrameGrabber(stream=stream)
-        elif (type(stream) == str) and Path(stream).is_file():
+        elif ((type(stream) == str) and Path(stream).is_file() and not streamtype) or streamtype == "file":
             logger.debug(f"found filename stream {stream=}")
             return FileStreamFrameGrabber(stream=stream, **kwargs)
-        elif (type(stream) == str) and (stream[:4] == "http"):
+        elif ((type(stream) == str) and (stream[:4] == "http") and not streamtype) or streamtype == "image_url":
             logger.debug(f"found image url {stream=}")
             return ImageURLFrameGrabber(url=stream, **kwargs)
         else:
-            raise ValueError(f"cannot create a frame grabber from {stream=}")
+            raise ValueError(f"cannot create a frame grabber from {stream=} {streamtype=}")
 
     @abstractmethod
     def grab():

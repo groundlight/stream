@@ -9,6 +9,7 @@ options:
   -f, --fps=FPS          number of frames to capture per second. 0 to use maximum rate possible. [default: 5]
   -h, --help             show this message.
   -s, --stream=STREAM    id, filename or URL of a video stream (e.g. rtsp://host:port/script?params OR movie.mp4 OR *.jpg) [default: 0]
+  -o, --streamtype=TYPE  (optional) type of stream. One of [device, directory, rtsp, youtube, file, image_url] [default: auto-infer]
   -t, --token=TOKEN      api token to authenticate with the groundlight api
   -v, --verbose          enable debug logs
   -w, --width=WIDTH      resize images to w pixels wide (and scale height proportionately if not set explicitly)
@@ -35,9 +36,8 @@ from xmlrpc.client import Boolean
 import cv2
 import docopt
 import yaml
-from groundlight import Groundlight
-
 from grabber import FrameGrabber
+from groundlight import Groundlight
 from motion import MotionDetector
 
 fname = os.path.join(os.path.dirname(__file__), "logging.yaml")
@@ -169,10 +169,12 @@ def main():
     DETECTOR = args["--detector"]
 
     STREAM = args["--stream"]
-    try:
-        STREAM = int(STREAM)
-    except ValueError as e:
-        logger.debug(f"{STREAM=} is not an int.  Treating as a filename or url.")
+    STREAM_TYPE = args.get("--type")
+    if STREAM_TYPE is None:
+        try:
+            STREAM = int(STREAM)
+        except ValueError as e:
+            logger.debug(f"{STREAM=} is not an int.  Treating as a filename or url.")
 
     FPS = args["--fps"]
     try:
@@ -215,7 +217,7 @@ def main():
 
     logger.debug(f"creating groundlight client with {ENDPOINT=} and {TOKEN=}")
     gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
-    grabber = FrameGrabber.create_grabber(stream=STREAM, fps_target=FPS)
+    grabber = FrameGrabber.create_grabber(stream=STREAM, stream_type=STREAM_TYPE, fps_target=FPS)
     q = Queue()
     tc = ThreadControl()
     if motion_detect:
