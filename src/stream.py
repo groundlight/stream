@@ -9,7 +9,7 @@ options:
   -f, --fps=FPS          number of frames to capture per second. 0 to use maximum rate possible. [default: 5]
   -h, --help             show this message.
   -s, --stream=STREAM    id, filename or URL of a video stream (e.g. rtsp://host:port/script?params OR movie.mp4 OR *.jpg) [default: 0]
-  -x, --streamtype=TYPE  (optional) type of stream. One of [device, directory, rtsp, youtube, file, image_url] [default: auto-infer]
+  -x, --streamtype=TYPE  type of stream. One of [infer, device, directory, rtsp, youtube, file, image_url] [default: infer]
   -t, --token=TOKEN      api token to authenticate with the groundlight api
   -v, --verbose          enable debug logs
   -w, --width=WIDTH      resize images to w pixels wide (and scale height proportionately if not set explicitly)
@@ -25,13 +25,10 @@ import logging
 import math
 import os
 import time
-from asyncio import QueueEmpty
 from logging.config import dictConfig
-from operator import truediv
 from queue import Empty, Queue
 from threading import Thread
 from typing import Tuple
-from xmlrpc.client import Boolean
 
 import cv2
 import docopt
@@ -55,7 +52,9 @@ class ThreadControl:
         self.exit_all_threads = True
 
 
-def frame_processor(q: Queue, client: Groundlight, detector: str, control: ThreadControl):
+def frame_processor(
+    q: Queue, client: Groundlight, detector: str, control: ThreadControl
+):
     logger.debug(f"frame_processor({q=}, {client=}, {detector=})")
     global thread_control_request_exit
     while True:
@@ -63,7 +62,9 @@ def frame_processor(q: Queue, client: Groundlight, detector: str, control: Threa
             logger.debug("exiting worker thread.")
             break
         try:
-            frame = q.get(timeout=1)  # timeout avoids deadlocked orphan when main process dies
+            frame = q.get(
+                timeout=1
+            )  # timeout avoids deadlocked orphan when main process dies
         except Empty:
             continue
         try:
@@ -127,7 +128,9 @@ def parse_crop_string(crop_string: str) -> Tuple[float, float, float, float]:
 
     for n in numbers:
         if (n < 0) or (n > 1):
-            raise ValueError("All numbers must be between 0 and 1, showing relative position in image")
+            raise ValueError(
+                "All numbers must be between 0 and 1, showing relative position in image"
+            )
 
     if numbers[0] + numbers[2] > 1.0:
         raise ValueError("Invalid crop: x+w is greater than 1.")
@@ -171,16 +174,24 @@ def main():
 
     STREAM = args["--stream"]
     STREAM_TYPE = args.get("--streamtype")
-    if STREAM_TYPE is None:
+    STREAM_TYPE = STREAM_TYPE.lower()
+    if STREAM_TYPE not in [
+        "infer",
+        "device",
+        "directory",
+        "rtsp",
+        "youtube",
+        "file",
+        "image_url",
+    ]:
+        raise ValueError(f"Invalid stream type {STREAM_TYPE=}")
+    logger.debug(f"{STREAM_TYPE=}")
+    if STREAM_TYPE == "infer":
         try:
             STREAM = int(STREAM)
         except ValueError as e:
             logger.debug(f"{STREAM=} is not an int.  Treating as a filename or url.")
-    else:
-        STREAM_TYPE = STREAM_TYPE.lower()
-        if STREAM_TYPE not in ["device", "directory", "rtsp", "youtube", "file", "image_url"]:
-            raise ValueError(f"Invalid stream type {STREAM_TYPE=}")
-        logger.debug(f"{STREAM_TYPE=}")
+        STREAM_TYPE = None
 
     FPS = args["--fps"]
     try:
@@ -223,7 +234,9 @@ def main():
 
     logger.debug(f"creating groundlight client with {ENDPOINT=} and {TOKEN=}")
     gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
-    grabber = FrameGrabber.create_grabber(stream=STREAM, stream_type=STREAM_TYPE, fps_target=FPS)
+    grabber = FrameGrabber.create_grabber(
+        stream=STREAM, stream_type=STREAM_TYPE, fps_target=FPS
+    )
     q = Queue()
     tc = ThreadControl()
     if motion_detect:
@@ -231,7 +244,10 @@ def main():
     workers = []
 
     for i in range(worker_thread_count):
-        thread = Thread(target=frame_processor, kwargs=dict(q=q, client=gl, detector=DETECTOR, control=tc))
+        thread = Thread(
+            target=frame_processor,
+            kwargs=dict(q=q, client=gl, detector=DETECTOR, control=tc),
+        )
         workers.append(thread)
         thread.start()
 
@@ -252,7 +268,9 @@ def main():
                 continue
 
             now = time.time()
-            logger.debug(f"captured a new frame after {now-start:.3f}s of size {frame.shape=} ")
+            logger.debug(
+                f"captured a new frame after {now-start:.3f}s of size {frame.shape=} "
+            )
 
             if crop_region:
                 frame = crop_frame(frame, crop_region)
@@ -292,7 +310,9 @@ def main():
                         f"Falling behind the desired {FPS=}.  Either grabbing frames or putting them into output queue (length={q.qsize()}) is taking too long."
                     )
                 else:
-                    logger.debug(f"waiting for {actual_delay=:.3}s to capture the next frame.")
+                    logger.debug(
+                        f"waiting for {actual_delay=:.3}s to capture the next frame."
+                    )
                     time.sleep(actual_delay)
 
     except KeyboardInterrupt:
