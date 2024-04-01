@@ -34,8 +34,9 @@ from typing import Tuple
 import cv2
 import docopt
 import yaml
-from grabber import FrameGrabber
 from groundlight import Groundlight
+
+from grabber import FrameGrabber
 from motion import MotionDetector
 
 fname = os.path.join(os.path.dirname(__file__), "logging.yaml")
@@ -53,9 +54,7 @@ class ThreadControl:
         self.exit_all_threads = True
 
 
-def frame_processor(
-    q: Queue, client: Groundlight, detector: str, control: ThreadControl
-):
+def frame_processor(q: Queue, client: Groundlight, detector: str, control: ThreadControl):
     logger.debug(f"frame_processor({q=}, {client=}, {detector=})")
     global thread_control_request_exit
     while True:
@@ -63,9 +62,7 @@ def frame_processor(
             logger.debug("exiting worker thread.")
             break
         try:
-            frame = q.get(
-                timeout=1
-            )  # timeout avoids deadlocked orphan when main process dies
+            frame = q.get(timeout=1)  # timeout avoids deadlocked orphan when main process dies
         except Empty:
             continue
         try:
@@ -129,9 +126,7 @@ def parse_crop_string(crop_string: str) -> Tuple[float, float, float, float]:
 
     for n in numbers:
         if (n < 0) or (n > 1):
-            raise ValueError(
-                "All numbers must be between 0 and 1, showing relative position in image"
-            )
+            raise ValueError("All numbers must be between 0 and 1, showing relative position in image")
 
     if numbers[0] + numbers[2] > 1.0:
         raise ValueError("Invalid crop: x+w is greater than 1.")
@@ -214,23 +209,17 @@ def main():
         try:
             motion_threshold = float(motion_threshold)
         except ValueError:
-            logger.error(
-                f"Invalid arguement threshold={motion_threshold} must be a number"
-            )
+            logger.error(f"Invalid arguement threshold={motion_threshold} must be a number")
             exit(-1)
         try:
             post_motion_time = float(post_motion_time)
         except ValueError:
-            logger.error(
-                f"Invalid arguement postmotion={post_motion_time} must be a number"
-            )
+            logger.error(f"Invalid arguement postmotion={post_motion_time} must be a number")
             exit(-1)
         try:
             max_frame_interval = float(max_frame_interval)
         except ValueError:
-            logger.error(
-                f"Invalid arguement maxinterval={max_frame_interval} must be a number"
-            )
+            logger.error(f"Invalid arguement maxinterval={max_frame_interval} must be a number")
             exit(-1)
         logger.info(
             f"Motion detection enabled with {motion_threshold=} and post-motion capture of {post_motion_time=} and max interval of {max_frame_interval=}"
@@ -245,9 +234,7 @@ def main():
     logger.debug(f"creating groundlight client with {ENDPOINT=} and {TOKEN=}")
     gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
     logger.debug(f"groundlight client created, whoami={gl.whoami()}")
-    grabber = FrameGrabber.create_grabber(
-        stream=STREAM, stream_type=STREAM_TYPE, fps_target=FPS
-    )
+    grabber = FrameGrabber.create_grabber(stream=STREAM, stream_type=STREAM_TYPE, fps_target=FPS)
     q = Queue()
     tc = ThreadControl()
     if motion_detect:
@@ -279,9 +266,7 @@ def main():
                 continue
 
             now = time.time()
-            logger.debug(
-                f"captured a new frame after {now-start:.3f}s of size {frame.shape=} "
-            )
+            logger.debug(f"captured a new frame after {now-start:.3f}s of size {frame.shape=} ")
 
             if crop_region:
                 frame = crop_frame(frame, crop_region)
@@ -321,9 +306,7 @@ def main():
                         f"Falling behind the desired {FPS=}.  Either grabbing frames or putting them into output queue (length={q.qsize()}) is taking too long."
                     )
                 else:
-                    logger.debug(
-                        f"waiting for {actual_delay=:.3}s to capture the next frame."
-                    )
+                    logger.debug(f"waiting for {actual_delay=:.3}s to capture the next frame.")
                     time.sleep(actual_delay)
 
     except KeyboardInterrupt:
