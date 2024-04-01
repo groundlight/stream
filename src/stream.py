@@ -20,6 +20,7 @@ options:
   -p, --postmotion=POSTMOTION  minimum number of seconds to capture for every motion detection [default: 1]
   -i, --maxinterval=MAXINT     maximum number of seconds before sending frames even without motion [default: 1000]
 """
+
 import io
 import logging
 import math
@@ -40,6 +41,7 @@ from motion import MotionDetector
 
 fname = os.path.join(os.path.dirname(__file__), "logging.yaml")
 dictConfig(yaml.safe_load(open(fname, "r")))
+
 logger = logging.getLogger(name="groundlight.stream")
 
 
@@ -52,9 +54,7 @@ class ThreadControl:
         self.exit_all_threads = True
 
 
-def frame_processor(
-    q: Queue, client: Groundlight, detector: str, control: ThreadControl
-):
+def frame_processor(q: Queue, client: Groundlight, detector: str, control: ThreadControl):
     logger.debug(f"frame_processor({q=}, {client=}, {detector=})")
     global thread_control_request_exit
     while True:
@@ -62,20 +62,18 @@ def frame_processor(
             logger.debug("exiting worker thread.")
             break
         try:
-            frame = q.get(
-                timeout=1
-            )  # timeout avoids deadlocked orphan when main process dies
+            frame = q.get(timeout=1)  # timeout avoids deadlocked orphan when main process dies
         except Empty:
             continue
         try:
             # prepare image
             start = time.time()
             is_success, buffer = cv2.imencode(".jpg", frame)
-            io_buf = io.BytesIO(buffer)
+            io_buf = io.BytesIO(buffer)  # type: ignore
             end = time.time()
             logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
             # send image query
-            image_query = client.submit_image_query(detector=detector, image=io_buf)
+            image_query = client.ask_async(detector=detector, image=io_buf)
             logger.debug(f"{image_query=}")
             start = end
             end = time.time()
@@ -128,9 +126,7 @@ def parse_crop_string(crop_string: str) -> Tuple[float, float, float, float]:
 
     for n in numbers:
         if (n < 0) or (n > 1):
-            raise ValueError(
-                "All numbers must be between 0 and 1, showing relative position in image"
-            )
+            raise ValueError("All numbers must be between 0 and 1, showing relative position in image")
 
     if numbers[0] + numbers[2] > 1.0:
         raise ValueError("Invalid crop: x+w is greater than 1.")
@@ -153,14 +149,14 @@ def main():
     if args.get("--width"):
         try:
             resize_width = int(args["--width"])
-        except ValueError as e:
+        except ValueError:
             raise ValueError(f"invalid width parameter: {args['--width']}")
 
     resize_height = 0
     if args.get("--height"):
         try:
             resize_height = int(args["--height"])
-        except ValueError as e:
+        except ValueError:
             raise ValueError(f"invalid height parameter: {args['--height']}")
 
     if args.get("--crop"):
@@ -173,7 +169,7 @@ def main():
     DETECTOR = args["--detector"]
 
     STREAM = args["--stream"]
-    STREAM_TYPE = args.get("--streamtype")
+    STREAM_TYPE = args["--streamtype"]
     STREAM_TYPE = STREAM_TYPE.lower()
     if STREAM_TYPE not in [
         "infer",
@@ -189,15 +185,15 @@ def main():
     if STREAM_TYPE == "infer":
         try:
             STREAM = int(STREAM)
-        except ValueError as e:
+        except ValueError:
             logger.debug(f"{STREAM=} is not an int.  Treating as a filename or url.")
         STREAM_TYPE = None
 
     FPS = args["--fps"]
     try:
         FPS = float(FPS)
-        logger.debug(f"{FPS=}")
-    except ValueError as e:
+        logger.debug(f"frames_per_second: {FPS}, seconds_per_frame: {1/FPS}")
+    except ValueError:
         logger.error(f"Invalid argument {FPS=}. Must be a number.")
         exit(-1)
     if FPS == 0:
@@ -207,36 +203,38 @@ def main():
 
     if args.get("--motion"):
         motion_detect = True
-        MOTION_THRESHOLD = args["--threshold"]
-        POST_MOTION = args["--postmotion"]
-        MAX_INTERVAL = args["--maxinterval"]
+        motion_threshold = args["--threshold"]
+        post_motion_time = args["--postmotion"]
+        max_frame_interval = args["--maxinterval"]
         try:
-            motion_threshold = float(MOTION_THRESHOLD)
-        except ValueError as e:
-            logger.error(f"Invalid arguement {MOTION_THRESHOLD=} must be a number")
+            motion_threshold = float(motion_threshold)
+        except ValueError:
+            logger.error(f"Invalid arguement threshold={motion_threshold} must be a number")
             exit(-1)
         try:
-            post_motion_time = float(POST_MOTION)
-        except ValueError as e:
-            logger.error(f"Invalid arguement {POST_MOTION=} must be a number")
+            post_motion_time = float(post_motion_time)
+        except ValueError:
+            logger.error(f"Invalid arguement postmotion={post_motion_time} must be a number")
             exit(-1)
         try:
-            max_frame_interval = float(MAX_INTERVAL)
-        except ValueError as e:
-            logger.error(f"Invalid arguement {MAX_INTERVAL=} must be a number")
+            max_frame_interval = float(max_frame_interval)
+        except ValueError:
+            logger.error(f"Invalid arguement maxinterval={max_frame_interval} must be a number")
             exit(-1)
         logger.info(
-            f"Motion detection enabled with {MOTION_THRESHOLD=} and post-motion capture of {POST_MOTION=} and max interval of {MAX_INTERVAL=}"
+            f"Motion detection enabled with {motion_threshold=} and post-motion capture of {post_motion_time=} and max interval of {max_frame_interval=}"
         )
     else:
         motion_detect = False
-        logger.info(f"Motion detection disabled.")
+        motion_threshold = 0  # appease the type checker
+        post_motion_time = 0
+        max_frame_interval = 0
+        logger.info("Motion detection disabled.")
 
     logger.debug(f"creating groundlight client with {ENDPOINT=} and {TOKEN=}")
     gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
-    grabber = FrameGrabber.create_grabber(
-        stream=STREAM, stream_type=STREAM_TYPE, fps_target=FPS
-    )
+    logger.debug(f"groundlight client created, whoami={gl.whoami()}")
+    grabber = FrameGrabber.create_grabber(stream=STREAM, stream_type=STREAM_TYPE, fps_target=FPS)
     q = Queue()
     tc = ThreadControl()
     if motion_detect:
@@ -255,7 +253,7 @@ def main():
         desired_delay = 1 / FPS
     except ZeroDivisionError:
         desired_delay = 1
-        logger.warning(f"FPS set to 0.  Using maximum stream rate")
+        logger.warning("FPS set to 0.  Using maximum stream rate")
     start = time.time()
 
     last_frame_time = time.time()
@@ -268,9 +266,7 @@ def main():
                 continue
 
             now = time.time()
-            logger.debug(
-                f"captured a new frame after {now-start:.3f}s of size {frame.shape=} "
-            )
+            logger.debug(f"captured a new frame after {now-start:.3f}s of size {frame.shape=} ")
 
             if crop_region:
                 frame = crop_frame(frame, crop_region)
@@ -292,7 +288,7 @@ def main():
                     )
                     add_frame_to_queue = True
                 else:
-                    logger.debug(f"skipping frame per motion detection settings")
+                    logger.debug("skipping frame per motion detection settings")
                     add_frame_to_queue = False
             else:
                 add_frame_to_queue = True
@@ -310,9 +306,7 @@ def main():
                         f"Falling behind the desired {FPS=}.  Either grabbing frames or putting them into output queue (length={q.qsize()}) is taking too long."
                     )
                 else:
-                    logger.debug(
-                        f"waiting for {actual_delay=:.3}s to capture the next frame."
-                    )
+                    logger.debug(f"waiting for {actual_delay=:.3}s to capture the next frame.")
                     time.sleep(actual_delay)
 
     except KeyboardInterrupt:
