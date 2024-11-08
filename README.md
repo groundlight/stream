@@ -28,27 +28,47 @@ Command line options are displayed like:
 
 ``` shell
 $ docker run groundlight/stream --help
+usage: stream.py [-h] -t TOKEN -d DETECTOR [-e ENDPOINT] [-s STREAM] [-x {infer,device,directory,rtsp,youtube,file,image_url}] [-f FPS] [-v] [-m] [-r THRESHOLD] [-p POSTMOTION] [-i MAXINTERVAL]
+                 [-w WIDTH] [-y HEIGHT] [-c CROP]
 
-Captures frames from a video device, file or stream and sends frames as
-image queries to a configured detector using the Groundlight API
+Groundlight Stream Processor
 
-usage: stream [options] -t TOKEN -d DETECTOR
+A command-line tool that captures frames from a video source and sends them to a Groundlight detector for analysis.
+
+Supports a variety of input sources including:
+- Video devices (webcams)
+- Video files (mp4, etc)
+- RTSP streams
+- YouTube videos
+- Image directories
+- Image URLs
 
 options:
-  -d, --detector=ID      detector id to which the image queries are sent
-  -e, --endpoint=URL     api endpoint [default: https://api.groundlight.ai/device-api]
-  -f, --fps=FPS          number of frames to capture per second. 0 to use maximum rate possible. [default: 5]
-  -h, --help             show this message.
-  -s, --stream=STREAM    id, filename or URL of a video stream (e.g. rtsp://host:port/script?params OR video.mp4 OR *.jpg) [default: 0]
-  -x, --streamtype=TYPE  (optional) type of stream. One of [device, directory, rtsp, youtube, file, image_url] [default: auto-infer]
-  -t, --token=TOKEN      API token to authenticate with the Groundlight API
-  -v, --verbose          enable debug logs
-  -w, --width=WIDTH      resize images to w pixels wide (and scale height proportionately if not set explicitly)
-  -y, --height=HEIGHT    resize images to y pixels high (and scale width proportionately if not set explicitly)
-  -m, --motion                 enable motion detection with pixel change threshold percentage (disabled by default)
-  -r, --threshold=THRESHOLD    set detection threshold for motion detection [default: 1]
-  -p, --postmotion=POSTMOTION  minimum number of seconds to capture for every motion detection [default: 1]
-  -i, --maxinterval=MAXINT     maximum number of seconds before sending frames even without motion [default: 1000]
+  -h, --help            show this help message and exit
+  -t TOKEN, --token TOKEN
+                        Groundlight API token for authentication.
+  -d DETECTOR, --detector DETECTOR
+                        Detector ID to send ImageQueries to.
+  -e ENDPOINT, --endpoint ENDPOINT
+                        API endpoint to target. For example, could be pointed at an edge-endpoint proxy server (https://github.com/groundlight/edge-endpoint).
+  -s STREAM, --stream STREAM
+                        Video source. A device ID, filename, or URL. Defaults to device ID '0'.
+  -x {infer,device,directory,rtsp,youtube,file,image_url}, --streamtype {infer,device,directory,rtsp,youtube,file,image_url}
+                        Source type. Defaults to 'infer' which will attempt to set this value based on --stream.
+  -f FPS, --fps FPS     Frames per second to capture (0 for max rate). Defaults to 1 FPS.
+  -v, --verbose         Enable debug logging.
+  -m, --motion          Enables motion detection, which is disabled by default.
+  -r THRESHOLD, --threshold THRESHOLD
+                        Motion detection threshold (% pixels changed). Defaults to 1%.
+  -p POSTMOTION, --postmotion POSTMOTION
+                        Seconds to capture after motion detected. Defaults to 1 second.
+  -i MAXINTERVAL, --maxinterval MAXINTERVAL
+                        Max seconds between frames even without motion. Defaults to 1000 seconds.
+  -w WIDTH, --width WIDTH
+                        Resize width in pixels.
+  -y HEIGHT, --height HEIGHT
+                        Resize height in pixels.
+  -c CROP, --crop CROP  Crop region, specified as fractions (0-1) of each dimension (e.g. '0.25,0.2,0.8,0.9').
 ```
 
 Start sending frames and getting predictions and labels using your own API token and detector ID:

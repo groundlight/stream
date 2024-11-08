@@ -1,15 +1,3 @@
-"""Groundlight Stream Processor
-
-A command-line tool that captures frames from a video source and sends them to a Groundlight detector for analysis.
-Supports multiple input sources including:
-- Video devices (webcams)
-- Video files (mp4, etc)
-- RTSP streams
-- YouTube videos
-- Image directories
-- Image URLs
-"""
-
 import argparse
 import io
 import logging
@@ -35,29 +23,44 @@ dictConfig(yaml.safe_load(open(fname)))
 logger = logging.getLogger(name="groundlight.stream")
 
 
+HELP_TEXT = """Groundlight Stream Processor
+
+A command-line tool that captures frames from a video source and sends them to a Groundlight detector for analysis.
+
+Supports a variety of input sources including:
+- Video devices (webcams)
+- Video files (mp4, etc)
+- RTSP streams
+- YouTube videos
+- Image directories
+- Image URLs
+"""
+
+
 # TODO list:
 # - Remove multithreading - not needed now that the Groundlight client supports ask_async
 # - Use the FrameGrabber class from the framegrab library
 
 
-def process_single_frame(frame: cv2.Mat, client: Groundlight, detector: str) -> None:
+def process_single_frame(frame: cv2.Mat, gl: Groundlight, detector: str) -> None:
     """Process a single frame and send it to Groundlight
 
     Args:
         frame: OpenCV image frame to process
-        client: Groundlight client instance
+        gl: Groundlight client instance
         detector: ID of detector to query
     """
     try:
-        # Prepare and send image
+        # Prepare image
         start = time.time()
         is_success, buffer = cv2.imencode(".jpg", frame)
         io_buf = io.BytesIO(buffer)  # type: ignore
         end = time.time()
         logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
 
+        # Submit image to Groundlight
         start = time.time()
-        image_query = client.ask_async(detector=detector, image=io_buf)
+        image_query = gl.ask_async(detector=detector, image=io_buf)
         end = time.time()
         logger.debug(f"{image_query=}")
         logger.info(f"API time for image {1000*(end-start):.1f}ms")
@@ -105,6 +108,7 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
     crop_region: tuple[float, float, float, float] | None,
 ) -> None:
     """Main capture loop implementation"""
+
     # Handle fps=0 case for maximum frame rate
     desired_delay = 1 / fps if fps > 0 else 0
     if fps == 0:
@@ -126,8 +130,9 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
 
         # Apply cropping if configured
         if crop_region:
+            original_shape = frame.shape
             frame = crop_frame(frame, crop_region)
-            logger.debug(f"Cropped to {frame.shape}")
+            logger.debug(f"Cropped frame from {original_shape} to {frame.shape}")
 
         # Determine if we should process this frame
         add_frame_to_queue = True
@@ -146,7 +151,7 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
                 logger.debug("Skipping frame - no motion detected")
                 add_frame_to_queue = False
 
-        # Process frame if needed
+        # Add frame to work queue
         if add_frame_to_queue:
             frame = resize_if_needed(frame, resize_width, resize_height)
             queue.put(frame)
@@ -158,7 +163,7 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
             actual_delay = desired_delay - elapsed_time
             if actual_delay < 0:
                 logger.warning(
-                    f"Cannot maintain {fps} FPS - processing taking {now-start:.3f}s (queue size: {queue.qsize()})"
+                    f"Cannot maintain {fps} FPS. Processing took {now-start:.3f}s (queue size: {queue.qsize()})"
                 )
             else:
                 logger.debug(f"Waiting {actual_delay:.3f}s until next frame")
@@ -167,38 +172,68 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
 
 def main():
     """Main entry point - parse args and run frame capture loop"""
-    parser = argparse.ArgumentParser(description="Groundlight Stream Processor")
+    parser = argparse.ArgumentParser(description=HELP_TEXT)
 
     # Required arguments
-    parser.add_argument("-t", "--token", required=True, help="Groundlight API token for authentication")
-    parser.add_argument("-d", "--detector", required=True, help="Detector ID to send image queries to")
+    parser.add_argument("-t", "--token", required=True, help="Groundlight API token for authentication.")
+    parser.add_argument("-d", "--detector", required=True, help="Detector ID to send ImageQueries to.")
 
     # Optional arguments
-    parser.add_argument("-e", "--endpoint", default="https://api.groundlight.ai/device-api", help="API endpoint")
-    parser.add_argument("-f", "--fps", type=float, default=5, help="Frames per second to capture (0 for max rate)")
-    parser.add_argument("-s", "--stream", default="0", help="Video source - device ID, filename, or URL")
+    parser.add_argument(
+        "-e",
+        "--endpoint",
+        default="https://api.groundlight.ai/device-api",
+        help="API endpoint to target. For example, could be pointed at an edge-endpoint proxy server (https://github.com/groundlight/edge-endpoint).",
+    )
+    parser.add_argument(
+        "-s", "--stream", default="0", help="Video source. A device ID, filename, or URL. Defaults to device ID '0'."
+    )
     parser.add_argument(
         "-x",
         "--streamtype",
         default="infer",
         choices=["infer", "device", "directory", "rtsp", "youtube", "file", "image_url"],
-        help="Source type",
+        help="Source type. Defaults to 'infer' which will attempt to set this value based on --stream.",
     )
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
-
-    # Image processing
-    parser.add_argument("-w", "--width", type=int, default=0, help="Resize width in pixels")
-    parser.add_argument("-y", "--height", type=int, default=0, help="Resize height in pixels")
-    parser.add_argument("-c", "--crop", default="0,0,1,1", help="Crop region as fractions (0-1) before resize")
+    parser.add_argument(
+        "-f", "--fps", type=float, default=1, help="Frames per second to capture (0 for max rate). Defaults to 1 FPS."
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging.")
 
     # Motion detection
-    parser.add_argument("-m", "--motion", action="store_true", help="Enable motion detection")
     parser.add_argument(
-        "-r", "--threshold", type=float, default=1, help="Motion detection threshold - %% pixels changed"
+        "-m", "--motion", action="store_true", help="Enables motion detection, which is disabled by default."
     )
-    parser.add_argument("-p", "--postmotion", type=float, default=1, help="Seconds to capture after motion detected")
     parser.add_argument(
-        "-i", "--maxinterval", type=float, default=1000, help="Max seconds between frames even without motion"
+        "-r",
+        "--threshold",
+        type=float,
+        default=1,
+        help="Motion detection threshold (%% pixels changed). Defaults to 1%%.",
+    )
+    parser.add_argument(
+        "-p",
+        "--postmotion",
+        type=float,
+        default=1,
+        help="Seconds to capture after motion detected. Defaults to 1 second.",
+    )
+    parser.add_argument(
+        "-i",
+        "--maxinterval",
+        type=float,
+        default=1000,
+        help="Max seconds between frames even without motion. Defaults to 1000 seconds.",
+    )
+
+    # Image pre-processing
+    parser.add_argument("-w", "--width", type=int, default=0, help="Resize width in pixels.")
+    parser.add_argument("-y", "--height", type=int, default=0, help="Resize height in pixels.")
+    parser.add_argument(
+        "-c",
+        "--crop",
+        default="0,0,1,1",
+        help="Crop region, specified as fractions (0-1) of each dimension (e.g. '0.25,0.2,0.8,0.9').",
     )
 
     # Parse and validate arguments
@@ -214,17 +249,16 @@ def main():
 
     # Setup Groundlight client
     gl = Groundlight(endpoint=args.endpoint, api_token=args.token)
-    logger.debug(f"groundlight client created, whoami={gl.whoami()}")
+    logger.debug(f"Groundlight client created, whoami={gl.whoami()}")
 
     # Setup frame grabber
     grabber_config = dict(stream=stream, stream_type=stream_type, fps_target=args.fps)
     grabber = FrameGrabber.create_grabber(**grabber_config)
 
     # Setup workers
-    fps = args.fps
-    worker_count = 10 if fps == 0 else math.ceil(fps)
-    _process_single_frame = partial(process_single_frame, client=gl, detector=args.detector)
-    q, tc, workers = setup_workers(fn=_process_single_frame, num_workers=worker_count)
+    worker_count = 10 if args.fps == 0 else math.ceil(args.fps)
+    _process_single_frame = partial(process_single_frame, gl=gl, detector=args.detector)
+    queue, tc, workers = setup_workers(fn=_process_single_frame, num_workers=worker_count)
 
     # Setup motion detection if enabled
     motion_detector = MotionDetector(pct_threshold=motion_threshold) if motion_detect else None
@@ -233,7 +267,7 @@ def main():
     try:
         run_capture_loop(
             grabber=grabber,
-            queue=q,
+            queue=queue,
             fps=args.fps,
             motion_detector=motion_detector,
             post_motion_time=post_motion_time,
@@ -243,7 +277,7 @@ def main():
             crop_region=crop_region,
         )
     except KeyboardInterrupt:
-        logger.info("exiting with KeyboardInterrupt.")
+        logger.info("Exiting with KeyboardInterrupt.")
         tc.force_exit()
         sys.exit(-1)
 

@@ -48,7 +48,7 @@ class FrameGrabber(metaclass=ABCMeta):
 
 
 class DirectoryFrameGrabber(FrameGrabber):
-    def __init__(self, stream=None, fps_target=0):
+    def __init__(self, stream=None):
         """stream must be an file mask"""
         try:
             self.filename_list = []

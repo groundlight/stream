@@ -55,7 +55,7 @@ def test_run_capture_loop_basic(test_frame):
             run_capture_loop,
             grabber=mock_grabber,
             queue=test_queue,
-            fps=10.0,
+            fps=5.0,
             motion_detector=None,
             post_motion_time=0,
             max_frame_interval=0,
@@ -64,6 +64,7 @@ def test_run_capture_loop_basic(test_frame):
             crop_region=None,
         )
 
+        # Run in a separate thread so we can check the size of the queue from the test thread.
         thread = threading.Thread(target=run_loop)
         thread.daemon = True
         thread.start()
@@ -84,9 +85,9 @@ def test_run_capture_loop_motion_detection(test_frame):
         mock_grabber = MagicMock()
         mock_grabber.grab.return_value = test_frame
 
-        # Setup motion detector that always detects motion
+        # Setup motion detector that never detects motion
         motion_detector = MagicMock(spec=MotionDetector)
-        motion_detector.motion_detected.return_value = True
+        motion_detector.motion_detected.return_value = False
 
         test_queue = Queue()
 
@@ -103,15 +104,16 @@ def test_run_capture_loop_motion_detection(test_frame):
             crop_region=None,
         )
 
+        # Run in a separate thread so we can check the size of the queue from the test thread.
         thread = threading.Thread(target=run_loop)
         thread.daemon = True
         thread.start()
 
         time.sleep(0.3)
 
-        # Verify motion detection was used and frames were queued
+        # Verify motion detection was used and so no frames were queued
         assert motion_detector.motion_detected.called
-        assert not test_queue.empty()
+        assert test_queue.empty()
 
 
 def test_run_capture_loop_fps_zero(test_frame):
@@ -134,6 +136,7 @@ def test_run_capture_loop_fps_zero(test_frame):
             crop_region=None,
         )
 
+        # Run in a separate thread so we can check the size of the queue from the test thread.
         thread = threading.Thread(target=run_loop)
         thread.daemon = True
         thread.start()
@@ -165,6 +168,7 @@ def test_run_capture_loop_no_frame():
             crop_region=None,
         )
 
+        # Run in a separate thread so we can check the size of the queue from the test thread.
         thread = threading.Thread(target=run_loop)
         thread.daemon = True
         thread.start()

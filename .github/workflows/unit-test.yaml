@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   test:
+    name: Run Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,5 +26,4 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run tests
-        run: |
-          uv run pytest
+        run: uv run pytest
