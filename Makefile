@@ -11,3 +11,6 @@ install-dev:
 
 test:
 	pytest
+
+relock:
+	uv lock
