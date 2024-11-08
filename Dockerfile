@@ -23,6 +23,8 @@ RUN uv sync --no-dev --frozen
 
 # Add source code
 COPY ./src/ /app/src/
+RUN uv sync --no-dev --frozen \
+    && uv pip install -e .
 
 # Run the application
-ENTRYPOINT ["uv", "run", "python", "/app/src/stream/stream.py"]
+ENTRYPOINT ["uv", "run", "python", "-m", "stream.stream"]
