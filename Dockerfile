@@ -1,12 +1,12 @@
 FROM python:3.11-slim
 
 # Install dependencies
-ADD pyproject.toml Makefile
-WORKDIR /src
-RUN make install
+COPY pyproject.toml README.md* ./
+RUN pip install .
 
 # Add source code
-ADD ./src/ /src/
+WORKDIR /src
+COPY ./src/ ./
 
 # Run the application
-ENTRYPOINT ["python","stream.py"]
+ENTRYPOINT ["python", "stream.py"]

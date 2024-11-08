@@ -3,6 +3,17 @@
 A containerized python application that uses the [Groundlight](https://www.groundlight.ai/) [Python SDK](https://github.com/groundlight/python-sdk) to
 process frames from a video file, device, or stream.
 
+## Table of Contents
+- [Groundlight Stream Processor](#groundlight-stream-processor)
+  - [Table of Contents](#table-of-contents)
+  - [Download](#download)
+  - [Usage](#usage)
+  - [Examples](#examples)
+    - [Running with a Local MP4 File](#running-with-a-local-mp4-file)
+    - [Using a YouTube URL](#using-a-youtube-url)
+    - [Connecting an RTSP Stream](#connecting-an-rtsp-stream)
+  - [Further Reading](#further-reading)
+
 ## Download
 
 This application is easy to use on any system with Docker installed.
@@ -11,7 +22,7 @@ This application is easy to use on any system with Docker installed.
 $ docker pull groundlight/stream
 ```
 
-## Useage
+## Usage
 
 Command line options are displayed like:
 
@@ -50,7 +61,8 @@ docker run groundlight/stream \
     -f 1
 ```
 
-## Running with a Local MP4 File
+## Examples
+### Running with a Local MP4 File
 
 To process frames from a local MP4 file, you need to mount the file from your host machine into the Docker container. Here's how to do it:
 
@@ -67,7 +79,7 @@ docker run -v /path/to/video:/videos groundlight/stream \
 
 This command mounts the `/path/to/video` directory on your host machine to the `/videos` directory inside the Docker container. The `-s` parameter is then set to the path of the MP4 file inside the container (`/videos/video.mp4`).
 
-## Using a YouTube URL
+### Using a YouTube URL
 YouTube URLs can be used to send frames to a detector by passing the video URL to the `-s` parameter:
 
 ``` shell
@@ -83,7 +95,7 @@ docker run groundlight/stream \
 
 Replace `YOUTUBE_URL` with the url of the YouTube video you are interested in.
 
-## Connecting an RTSP Stream
+### Connecting an RTSP Stream
 
 To connect an RTSP stream from a camera or other source, you'll need the RTSP URL specific to your device. Check the instructions provided earlier in this document for obtaining the RTSP URL for your camera.
 
