@@ -8,33 +8,9 @@ Supports multiple input sources including:
 - YouTube videos
 - Image directories
 - Image URLs
-
-Usage:
-    stream [options] -t TOKEN -d DETECTOR
-
-Required Arguments:
-    -t, --token=TOKEN      Groundlight API token for authentication
-    -d, --detector=ID      Detector ID to send image queries to
-
-Optional Arguments:
-    -e, --endpoint=URL     API endpoint [default: https://api.groundlight.ai/device-api]
-    -f, --fps=FPS          Frames per second to capture (0 for max rate) [default: 5]
-    -s, --stream=STREAM    Video source - device ID, filename, or URL [default: 0]
-    -x, --streamtype=TYPE  Source type: [infer, device, directory, rtsp, youtube, file, image_url] [default: infer]
-    -v, --verbose          Enable debug logging
-
-Image Processing:
-    -w, --width=WIDTH      Resize width in pixels (height scaled proportionally if not set)
-    -y, --height=HEIGHT    Resize height in pixels (width scaled proportionally if not set)
-    -c, --crop=[x,y,w,h]   Crop region as fractions (0-1) before resize [default: "0,0,1,1"]
-
-Motion Detection:
-    -m, --motion           Enable motion detection
-    -r, --threshold=PCT    Motion detection threshold - % pixels changed [default: 1]
-    -p, --postmotion=SEC   Seconds to capture after motion detected [default: 1]
-    -i, --maxinterval=SEC  Max seconds between frames even without motion [default: 1000]
 """
 
+import argparse
 import io
 import logging
 import math
@@ -46,7 +22,6 @@ from logging.config import dictConfig
 from queue import Queue
 
 import cv2
-import docopt
 import yaml
 from framegrab import MotionDetector
 from grabber import FrameGrabber
@@ -62,7 +37,6 @@ logger = logging.getLogger(name="groundlight.stream")
 # TODO list:
 # - Remove multithreading - not needed now that the Groundlight client supports ask_async
 # - Use the FrameGrabber class from the framegrab library
-# - Better argument parsing and validation
 
 
 def process_single_frame(frame: cv2.Mat, client: Groundlight, detector: str) -> None:
@@ -90,29 +64,29 @@ def process_single_frame(frame: cv2.Mat, client: Groundlight, detector: str) -> 
         logger.error(f"Exception while processing frame : {e}", exc_info=True)
 
 
-def parse_resize_args(args: dict) -> tuple[int, int]:
+def parse_resize_args(args: argparse.Namespace) -> tuple[int, int]:
     """Parse and validate width/height resize arguments"""
     resize_width = 0
-    if args.get("--width"):
+    if args.width:
         try:
-            resize_width = int(args["--width"])
+            resize_width = int(args.width)
         except ValueError:
-            raise ValueError(f"invalid width parameter: {args['--width']}")
+            raise ValueError(f"invalid width parameter: {args.width}")
 
     resize_height = 0
-    if args.get("--height"):
+    if args.height:
         try:
-            resize_height = int(args["--height"])
+            resize_height = int(args.height)
         except ValueError:
-            raise ValueError(f"invalid height parameter: {args['--height']}")
+            raise ValueError(f"invalid height parameter: {args.height}")
 
     return resize_width, resize_height
 
 
-def parse_stream_args(args: dict) -> tuple[str | int, str | None]:
+def parse_stream_args(args: argparse.Namespace) -> tuple[str | int, str | None]:
     """Parse and validate stream source arguments"""
-    stream = args["--stream"]
-    stream_type = args["--streamtype"].lower()
+    stream = args.stream
+    stream_type = args.streamtype.lower()
 
     if stream_type not in [
         "infer",
@@ -135,22 +109,23 @@ def parse_stream_args(args: dict) -> tuple[str | int, str | None]:
     return stream, stream_type
 
 
-def parse_motion_args(args: dict) -> tuple[bool, float, float, float]:
+def parse_motion_args(args: argparse.Namespace) -> tuple[bool, float, float, float]:
     """Parse and validate motion detection arguments"""
-    if not args.get("--motion"):
+    if not args.motion:
         logger.info("Motion detection disabled.")
         return False, 0, 0, 0
 
     try:
-        threshold = float(args["--threshold"])
-        post_motion = float(args["--postmotion"])
-        max_interval = float(args["--maxinterval"])
+        threshold = float(args.threshold)
+        post_motion = float(args.postmotion)
+        max_interval = float(args.maxinterval)
     except ValueError as e:
         logger.error(f"Invalid motion detection parameter: {e}")
         sys.exit(-1)
 
     logger.info(
-        f"Motion detection enabled with threshold={threshold} and post-motion capture of {post_motion}s and max interval of {max_interval}s"
+        f"Motion detection enabled with threshold={threshold} and post-motion capture of {post_motion}s "
+        f"and max interval of {max_interval}s"
     )
     return True, threshold, post_motion, max_interval
 
@@ -229,29 +204,64 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
 
 def main():
     """Main entry point - parse args and run frame capture loop"""
-    args = docopt.docopt(__doc__)
-    if args.get("--verbose"):
+    parser = argparse.ArgumentParser(description="Groundlight Stream Processor")
+
+    # Required arguments
+    parser.add_argument("-t", "--token", required=True, help="Groundlight API token for authentication")
+    parser.add_argument("-d", "--detector", required=True, help="Detector ID to send image queries to")
+
+    # Optional arguments
+    parser.add_argument("-e", "--endpoint", default="https://api.groundlight.ai/device-api", help="API endpoint")
+    parser.add_argument("-f", "--fps", type=float, default=5, help="Frames per second to capture (0 for max rate)")
+    parser.add_argument("-s", "--stream", default="0", help="Video source - device ID, filename, or URL")
+    parser.add_argument(
+        "-x",
+        "--streamtype",
+        default="infer",
+        choices=["infer", "device", "directory", "rtsp", "youtube", "file", "image_url"],
+        help="Source type",
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
+
+    # Image processing
+    parser.add_argument("-w", "--width", type=int, help="Resize width in pixels")
+    parser.add_argument("-y", "--height", type=int, help="Resize height in pixels")
+    parser.add_argument("-c", "--crop", default="0,0,1,1", help="Crop region as fractions (0-1) before resize")
+
+    # Motion detection
+    parser.add_argument("-m", "--motion", action="store_true", help="Enable motion detection")
+    parser.add_argument(
+        "-r", "--threshold", type=float, default=1, help="Motion detection threshold - %% pixels changed"
+    )
+    parser.add_argument("-p", "--postmotion", type=float, default=1, help="Seconds to capture after motion detected")
+    parser.add_argument(
+        "-i", "--maxinterval", type=float, default=1000, help="Max seconds between frames even without motion"
+    )
+
+    args = parser.parse_args()
+
+    if args.verbose:
         logger.level = logging.DEBUG
         logger.debug(f"{args=}")
 
     # Parse arguments
     resize_width, resize_height = parse_resize_args(args)
-    crop_region = parse_crop_string(args["--crop"]) if args.get("--crop") else None
+    crop_region = parse_crop_string(args.crop) if args.crop else None
     stream, stream_type = parse_stream_args(args)
     motion_detect, motion_threshold, post_motion_time, max_frame_interval = parse_motion_args(args)
 
     # Setup Groundlight client
-    gl = Groundlight(endpoint=args["--endpoint"], api_token=args["--token"])
+    gl = Groundlight(endpoint=args.endpoint, api_token=args.token)
     logger.debug(f"groundlight client created, whoami={gl.whoami()}")
 
     # Setup frame grabber
-    grabber_config = dict(stream=stream, stream_type=stream_type, fps_target=float(args["--fps"]))
+    grabber_config = dict(stream=stream, stream_type=stream_type, fps_target=args.fps)
     grabber = FrameGrabber.create_grabber(**grabber_config)
 
     # Setup workers
-    fps = float(args["--fps"])
+    fps = args.fps
     worker_count = 10 if fps == 0 else math.ceil(fps)
-    _process_single_frame = partial(process_single_frame, client=gl, detector=args["--detector"])
+    _process_single_frame = partial(process_single_frame, client=gl, detector=args.detector)
     q, tc, workers = setup_workers(fn=_process_single_frame, num_workers=worker_count)
 
     # Setup motion detection if enabled
@@ -262,7 +272,7 @@ def main():
         run_capture_loop(
             grabber=grabber,
             queue=q,
-            fps=float(args["--fps"]),
+            fps=args.fps,
             motion_detector=motion_detector,
             post_motion_time=post_motion_time,
             max_frame_interval=max_frame_interval,
