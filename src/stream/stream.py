@@ -65,40 +65,10 @@ def process_single_frame(frame: cv2.Mat, client: Groundlight, detector: str) -> 
         logger.error(f"Exception while processing frame : {e}", exc_info=True)
 
 
-def parse_resize_args(args: argparse.Namespace) -> tuple[int, int]:
-    """Parse and validate width/height resize arguments"""
-    resize_width = 0
-    if args.width:
-        try:
-            resize_width = int(args.width)
-        except ValueError:
-            raise ValueError(f"invalid width parameter: {args.width}")
-
-    resize_height = 0
-    if args.height:
-        try:
-            resize_height = int(args.height)
-        except ValueError:
-            raise ValueError(f"invalid height parameter: {args.height}")
-
-    return resize_width, resize_height
-
-
-def parse_stream_args(args: argparse.Namespace) -> tuple[str | int, str | None]:
+def validate_stream_args(args: argparse.Namespace) -> tuple[str | int, str | None]:
     """Parse and validate stream source arguments"""
     stream = args.stream
     stream_type = args.streamtype.lower()
-
-    if stream_type not in [
-        "infer",
-        "device",
-        "directory",
-        "rtsp",
-        "youtube",
-        "file",
-        "image_url",
-    ]:
-        raise ValueError(f"Invalid stream type {stream_type=}")
 
     if stream_type == "infer":
         try:
@@ -116,19 +86,11 @@ def parse_motion_args(args: argparse.Namespace) -> tuple[bool, float, float, flo
         logger.info("Motion detection disabled.")
         return False, 0, 0, 0
 
-    try:
-        threshold = float(args.threshold)
-        post_motion = float(args.postmotion)
-        max_interval = float(args.maxinterval)
-    except ValueError as e:
-        logger.error(f"Invalid motion detection parameter: {e}")
-        sys.exit(-1)
-
     logger.info(
-        f"Motion detection enabled with threshold={threshold} and post-motion capture of {post_motion}s "
-        f"and max interval of {max_interval}s"
+        f"Motion detection enabled with threshold={args.threshold} and post-motion capture of {args.postmotion}s "
+        f"and max interval of {args.maxinterval}s"
     )
-    return True, threshold, post_motion, max_interval
+    return True, args.threshold, args.postmotion, args.maxinterval
 
 
 def run_capture_loop(  # noqa: PLR0912 PLR0913
@@ -225,8 +187,8 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
 
     # Image processing
-    parser.add_argument("-w", "--width", type=int, help="Resize width in pixels")
-    parser.add_argument("-y", "--height", type=int, help="Resize height in pixels")
+    parser.add_argument("-w", "--width", type=int, default=0, help="Resize width in pixels")
+    parser.add_argument("-y", "--height", type=int, default=0, help="Resize height in pixels")
     parser.add_argument("-c", "--crop", default="0,0,1,1", help="Crop region as fractions (0-1) before resize")
 
     # Motion detection
@@ -239,16 +201,15 @@ def main():
         "-i", "--maxinterval", type=float, default=1000, help="Max seconds between frames even without motion"
     )
 
+    # Parse and validate arguments
     args = parser.parse_args()
 
     if args.verbose:
         logger.level = logging.DEBUG
         logger.debug(f"{args=}")
 
-    # Parse arguments
-    resize_width, resize_height = parse_resize_args(args)
     crop_region = parse_crop_string(args.crop) if args.crop else None
-    stream, stream_type = parse_stream_args(args)
+    stream, stream_type = validate_stream_args(args)
     motion_detect, motion_threshold, post_motion_time, max_frame_interval = parse_motion_args(args)
 
     # Setup Groundlight client
@@ -277,8 +238,8 @@ def main():
             motion_detector=motion_detector,
             post_motion_time=post_motion_time,
             max_frame_interval=max_frame_interval,
-            resize_width=resize_width,
-            resize_height=resize_height,
+            resize_width=args.resize_width,
+            resize_height=args.resize_height,
             crop_region=crop_region,
         )
     except KeyboardInterrupt:
