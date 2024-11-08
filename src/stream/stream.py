@@ -49,9 +49,8 @@ import cv2
 import docopt
 import yaml
 from framegrab import MotionDetector
-from groundlight import Groundlight
-
 from grabber import FrameGrabber
+from groundlight import Groundlight
 from image_processing import crop_frame, parse_crop_string, resize_if_needed
 from threads import setup_workers
 
