@@ -39,7 +39,7 @@ def setup_workers(fn: Callable, num_workers: int = 10) -> tuple[Queue, ThreadCon
 
 
 def worker_loop(q: Queue, control: ThreadControl, fn: Callable):
-    """Worker thread that processes frames from the queue and sends them to Groundlight
+    """Worker thread that takes work (frames) from the queue and uses the provided function to process them
 
     Args:
         q: Queue containing work to do

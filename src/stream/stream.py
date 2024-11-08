@@ -155,55 +155,6 @@ def parse_motion_args(args: dict) -> tuple[bool, float, float, float]:
     return True, threshold, post_motion, max_interval
 
 
-def main():
-    """Main entry point - parse args and run frame capture loop"""
-    args = docopt.docopt(__doc__)
-    if args.get("--verbose"):
-        logger.level = logging.DEBUG
-        logger.debug(f"{args=}")
-
-    # Parse arguments
-    resize_width, resize_height = parse_resize_args(args)
-    crop_region = parse_crop_string(args["--crop"]) if args.get("--crop") else None
-    stream, stream_type = parse_stream_args(args)
-    motion_detect, motion_threshold, post_motion_time, max_frame_interval = parse_motion_args(args)
-
-    # Setup Groundlight client
-    gl = Groundlight(endpoint=args["--endpoint"], api_token=args["--token"])
-    logger.debug(f"groundlight client created, whoami={gl.whoami()}")
-
-    # Setup frame grabber
-    grabber_config = dict(stream=stream, stream_type=stream_type, fps_target=float(args["--fps"]))
-    grabber = FrameGrabber.create_grabber(**grabber_config)
-
-    # Setup workers
-    fps = float(args["--fps"])
-    worker_count = 10 if fps == 0 else math.ceil(fps)
-    _process_single_frame = partial(process_single_frame, client=gl, detector=args["--detector"])
-    q, tc, workers = setup_workers(fn=_process_single_frame, num_workers=worker_count)
-
-    # Setup motion detection if enabled
-    motion_detector = MotionDetector(pct_threshold=motion_threshold) if motion_detect else None
-
-    # Main capture loop
-    try:
-        run_capture_loop(
-            grabber=grabber,
-            queue=q,
-            fps=float(args["--fps"]),
-            motion_detector=motion_detector,
-            post_motion_time=post_motion_time,
-            max_frame_interval=max_frame_interval,
-            resize_width=resize_width,
-            resize_height=resize_height,
-            crop_region=crop_region,
-        )
-    except KeyboardInterrupt:
-        logger.info("exiting with KeyboardInterrupt.")
-        tc.force_exit()
-        sys.exit(-1)
-
-
 def run_capture_loop(  # noqa: PLR0912 PLR0913
     grabber: FrameGrabber,
     queue: Queue,
@@ -274,6 +225,55 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
             else:
                 logger.debug(f"Waiting {actual_delay:.3f}s until next frame")
                 time.sleep(actual_delay)
+
+
+def main():
+    """Main entry point - parse args and run frame capture loop"""
+    args = docopt.docopt(__doc__)
+    if args.get("--verbose"):
+        logger.level = logging.DEBUG
+        logger.debug(f"{args=}")
+
+    # Parse arguments
+    resize_width, resize_height = parse_resize_args(args)
+    crop_region = parse_crop_string(args["--crop"]) if args.get("--crop") else None
+    stream, stream_type = parse_stream_args(args)
+    motion_detect, motion_threshold, post_motion_time, max_frame_interval = parse_motion_args(args)
+
+    # Setup Groundlight client
+    gl = Groundlight(endpoint=args["--endpoint"], api_token=args["--token"])
+    logger.debug(f"groundlight client created, whoami={gl.whoami()}")
+
+    # Setup frame grabber
+    grabber_config = dict(stream=stream, stream_type=stream_type, fps_target=float(args["--fps"]))
+    grabber = FrameGrabber.create_grabber(**grabber_config)
+
+    # Setup workers
+    fps = float(args["--fps"])
+    worker_count = 10 if fps == 0 else math.ceil(fps)
+    _process_single_frame = partial(process_single_frame, client=gl, detector=args["--detector"])
+    q, tc, workers = setup_workers(fn=_process_single_frame, num_workers=worker_count)
+
+    # Setup motion detection if enabled
+    motion_detector = MotionDetector(pct_threshold=motion_threshold) if motion_detect else None
+
+    # Main capture loop
+    try:
+        run_capture_loop(
+            grabber=grabber,
+            queue=q,
+            fps=float(args["--fps"]),
+            motion_detector=motion_detector,
+            post_motion_time=post_motion_time,
+            max_frame_interval=max_frame_interval,
+            resize_width=resize_width,
+            resize_height=resize_height,
+            crop_region=crop_region,
+        )
+    except KeyboardInterrupt:
+        logger.info("exiting with KeyboardInterrupt.")
+        tc.force_exit()
+        sys.exit(-1)
 
 
 if __name__ == "__main__":

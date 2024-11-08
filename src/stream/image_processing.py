@@ -10,7 +10,7 @@ dictConfig(yaml.safe_load(open(fname)))
 logger = logging.getLogger(name="groundlight.stream")
 
 
-def resize_if_needed(frame, width: int, height: int) -> cv2.Mat:
+def resize_if_needed(frame: cv2.Mat, width: int, height: int) -> cv2.Mat:
     """Resize image frame while maintaining aspect ratio
 
     Args:
@@ -39,7 +39,7 @@ def resize_if_needed(frame, width: int, height: int) -> cv2.Mat:
     return frame
 
 
-def crop_frame(frame, crop_region: tuple[float, float, float, float]):
+def crop_frame(frame: cv2.Mat, crop_region: tuple[float, float, float, float]) -> cv2.Mat:
     """Crop image frame to specified region
 
     Args:
