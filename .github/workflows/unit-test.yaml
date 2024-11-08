@@ -19,7 +19,7 @@ jobs:
         uses: astral-sh/setup-uv@v3
 
       - name: Install python
-        run: uv python install
+        run: uv python install 3.11
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
