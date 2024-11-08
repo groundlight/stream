@@ -3,7 +3,7 @@ import threading
 import time
 from unittest.mock import Mock
 
-from threads import ThreadControl, setup_workers, worker_loop
+from stream.threads import ThreadControl, setup_workers, worker_loop
 
 
 def test_thread_control():

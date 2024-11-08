@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from image_processing import crop_frame, parse_crop_string, resize_if_needed
+from stream.image_processing import crop_frame, parse_crop_string, resize_if_needed
 
 
 def test_resize_if_needed():

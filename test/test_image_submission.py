@@ -10,7 +10,7 @@ import pytest
 from framegrab import MotionDetector
 from groundlight import Groundlight
 
-from stream import process_single_frame, run_capture_loop
+from stream.stream import process_single_frame, run_capture_loop
 from test.utils import thread_logging
 
 

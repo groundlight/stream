@@ -1,6 +1,6 @@
 import pytest
 
-from stream import parse_motion_args, parse_resize_args, parse_stream_args
+from stream.stream import parse_motion_args, parse_resize_args, parse_stream_args
 
 
 def test_parse_resize_args():
