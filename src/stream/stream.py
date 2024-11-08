@@ -24,10 +24,11 @@ from queue import Queue
 import cv2
 import yaml
 from framegrab import MotionDetector
-from grabber import FrameGrabber
 from groundlight import Groundlight
-from image_processing import crop_frame, parse_crop_string, resize_if_needed
-from threads import setup_workers
+
+from stream.grabber import FrameGrabber
+from stream.image_processing import crop_frame, parse_crop_string, resize_if_needed
+from stream.threads import setup_workers
 
 fname = os.path.join(os.path.dirname(__file__), "logging.yaml")
 dictConfig(yaml.safe_load(open(fname)))
