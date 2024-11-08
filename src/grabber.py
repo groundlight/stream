@@ -171,7 +171,7 @@ class RTSPFrameGrabber(FrameGrabber):
     def grab(self):
         start = time.time()
         with self.lock:
-            logger.debug(f"grabbed lock to read frame from buffer")
+            logger.debug("grabbed lock to read frame from buffer")
             ret, frame = self.capture.read()  # grab and decode since we want this frame
             if not ret:
                 logger.error(f"could not read frame from {self.capture=}")
@@ -180,7 +180,7 @@ class RTSPFrameGrabber(FrameGrabber):
             return frame
 
     def _drain(self):
-        logger.debug(f"starting thread to drain the video capture buffer")
+        logger.debug("starting thread to drain the video capture buffer")
         while True:
             with self.lock:
                 ret = self.capture.grab()  # just grab and don't decode

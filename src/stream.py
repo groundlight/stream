@@ -1,150 +1,98 @@
-"""Captures frames from a video device, file or stream and sends frames as
-image queries to a configured detector using the Groundlight API
+"""Groundlight Stream Processor
 
-usage: stream [options] -t TOKEN -d DETECTOR
+A command-line tool that captures frames from a video source and sends them to a Groundlight detector for analysis.
+Supports multiple input sources including:
+- Video devices (webcams)
+- Video files (mp4, etc)
+- RTSP streams
+- YouTube videos
+- Image directories
+- Image URLs
 
-options:
-  -d, --detector=ID      detector id to which the image queries are sent
-  -e, --endpoint=URL     api endpoint [default: https://api.groundlight.ai/device-api]
-  -f, --fps=FPS          number of frames to capture per second. 0 to use maximum rate possible. [default: 5]
-  -h, --help             show this message.
-  -s, --stream=STREAM    id, filename or URL of a video stream (e.g. rtsp://host:port/script?params OR movie.mp4 OR *.jpg) [default: 0]
-  -x, --streamtype=TYPE  type of stream. One of [infer, device, directory, rtsp, youtube, file, image_url] [default: infer]
-  -t, --token=TOKEN      api token to authenticate with the groundlight api
-  -v, --verbose          enable debug logs
-  -w, --width=WIDTH      resize images to w pixels wide (and scale height proportionately if not set explicitly)
-  -y, --height=HEIGHT    resize images to y pixels high (and scale width proportionately if not set explicitly)
-  -c, --crop=[x,y,w,h]   crop image to box before resizing. x,y,w,h are fractions from 0-1.  [Default:"0,0,1,1"]
-  -m, --motion                 enable motion detection with pixel change threshold percentage (disabled by default)
-  -r, --threshold=THRESHOLD    detection threshold for motion detection - percent of changed pixels [default: 1]
-  -p, --postmotion=POSTMOTION  minimum number of seconds to capture for every motion detection [default: 1]
-  -i, --maxinterval=MAXINT     maximum number of seconds before sending frames even without motion [default: 1000]
+Usage:
+    stream [options] -t TOKEN -d DETECTOR
+
+Required Arguments:
+    -t, --token=TOKEN      Groundlight API token for authentication
+    -d, --detector=ID      Detector ID to send image queries to
+
+Optional Arguments:
+    -e, --endpoint=URL     API endpoint [default: https://api.groundlight.ai/device-api]
+    -f, --fps=FPS          Frames per second to capture (0 for max rate) [default: 5]
+    -s, --stream=STREAM    Video source - device ID, filename, or URL [default: 0]
+    -x, --streamtype=TYPE  Source type: [infer, device, directory, rtsp, youtube, file, image_url] [default: infer]
+    -v, --verbose          Enable debug logging
+
+Image Processing:
+    -w, --width=WIDTH      Resize width in pixels (height scaled proportionally if not set)
+    -y, --height=HEIGHT    Resize height in pixels (width scaled proportionally if not set)
+    -c, --crop=[x,y,w,h]   Crop region as fractions (0-1) before resize [default: "0,0,1,1"]
+
+Motion Detection:
+    -m, --motion           Enable motion detection
+    -r, --threshold=PCT    Motion detection threshold - % pixels changed [default: 1]
+    -p, --postmotion=SEC   Seconds to capture after motion detected [default: 1]
+    -i, --maxinterval=SEC  Max seconds between frames even without motion [default: 1000]
 """
 
 import io
 import logging
 import math
 import os
+import sys
 import time
+from functools import partial
 from logging.config import dictConfig
-from queue import Empty, Queue
-from threading import Thread
-from typing import Tuple
+from queue import Queue
 
 import cv2
 import docopt
 import yaml
+from framegrab import MotionDetector
 from groundlight import Groundlight
 
 from grabber import FrameGrabber
-from motion import MotionDetector
+from image_processing import crop_frame, parse_crop_string, resize_if_needed
+from threads import setup_workers
 
 fname = os.path.join(os.path.dirname(__file__), "logging.yaml")
-dictConfig(yaml.safe_load(open(fname, "r")))
-
+dictConfig(yaml.safe_load(open(fname)))
 logger = logging.getLogger(name="groundlight.stream")
 
 
-class ThreadControl:
-    def __init__(self):
-        self.exit_all_threads = False
-
-    def force_exit(self):
-        logger.debug("Attempting force exit of all threads")
-        self.exit_all_threads = True
+# TODO list:
+# - Remove multithreading - not needed now that the Groundlight client supports ask_async
+# - Use the FrameGrabber class from the framegrab library
+# - Better argument parsing and validation
 
 
-def frame_processor(q: Queue, client: Groundlight, detector: str, control: ThreadControl):
-    logger.debug(f"frame_processor({q=}, {client=}, {detector=})")
-    global thread_control_request_exit
-    while True:
-        if control.exit_all_threads:
-            logger.debug("exiting worker thread.")
-            break
-        try:
-            frame = q.get(timeout=1)  # timeout avoids deadlocked orphan when main process dies
-        except Empty:
-            continue
-        try:
-            # prepare image
-            start = time.time()
-            is_success, buffer = cv2.imencode(".jpg", frame)
-            io_buf = io.BytesIO(buffer)  # type: ignore
-            end = time.time()
-            logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
-            # send image query
-            image_query = client.ask_async(detector=detector, image=io_buf)
-            logger.debug(f"{image_query=}")
-            start = end
-            end = time.time()
-            logger.info(f"API time for image {1000*(end-start):.1f}ms")
-        except Exception as e:
-            logger.error(f"Exception while processing frame : {e}")
+def process_single_frame(frame: cv2.Mat, client: Groundlight, detector: str) -> None:
+    """Process a single frame and send it to Groundlight
 
-
-def resize_if_needed(frame, width: int, height: int):
-    # scales cv2 image frame to widthxheight pixels
-    # values of 0 for width or height will keep proportional.
-
-    if (width == 0) & (height == 0):
-        return
-
-    image_height, image_width, _ = frame.shape
-    if width > 0:
-        target_width = width
-    else:
-        target_width = int(image_width * (height / image_height))
-    if height > 0:
-        target_height = height
-    else:
-        target_height = int(image_height * (width / image_width))
-
-    logger.debug(f"resizing from {frame.shape=} to {target_width=}x{target_height=}")
-    frame = cv2.resize(frame, (target_width, target_height))
-
-
-def crop_frame(frame, crop_region: Tuple[float, float, float, float]):
-    """Returns a cropped version of the frame."""
-    (img_height, img_width, _) = frame.shape
-    x1 = int(img_width * crop_region[0])
-    y1 = int(img_height * crop_region[1])
-    x2 = x1 + int(img_width * crop_region[2])
-    y2 = y1 + int(img_height * crop_region[3])
-
-    out = frame[y1:y2, x1:x2, :]
-    return out
-
-
-def parse_crop_string(crop_string: str) -> Tuple[float, float, float, float]:
-    """Parses a string like "0.25,0.25,0.5,0.5" to a tuple like (0.25,0.25,0.5,0.5)
-    Also validates that numbers are between 0-1, and that it doesn't go off the edge.
+    Args:
+        frame: OpenCV image frame to process
+        client: Groundlight client instance
+        detector: ID of detector to query
     """
-    parts = crop_string.split(",")
-    if len(parts) != 4:
-        raise ValueError("Expected crop to be list of four floating point numbers.")
-    numbers = tuple([float(n) for n in parts])
+    try:
+        # Prepare and send image
+        start = time.time()
+        is_success, buffer = cv2.imencode(".jpg", frame)
+        io_buf = io.BytesIO(buffer)  # type: ignore
+        end = time.time()
+        logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
 
-    for n in numbers:
-        if (n < 0) or (n > 1):
-            raise ValueError("All numbers must be between 0 and 1, showing relative position in image")
-
-    if numbers[0] + numbers[2] > 1.0:
-        raise ValueError("Invalid crop: x+w is greater than 1.")
-    if numbers[1] + numbers[3] > 1.0:
-        raise ValueError("Invalid crop: y+h is greater than 1.")
-
-    if numbers[2] * numbers[3] == 0:
-        raise ValueError("Width and Height must both be >0")
-
-    return numbers
+        start = time.time()
+        image_query = client.ask_async(detector=detector, image=io_buf)
+        end = time.time()
+        logger.debug(f"{image_query=}")
+        logger.info(f"API time for image {1000*(end-start):.1f}ms")
+    except Exception as e:
+        logger.error(f"Exception while processing frame : {e}", exc_info=True)
 
 
-def main():
-    args = docopt.docopt(__doc__)
-    if args.get("--verbose"):
-        logger.level = logging.DEBUG
-        logger.debug(f"{args=}")
-
+def parse_resize_args(args: dict) -> tuple[int, int]:
+    """Parse and validate width/height resize arguments"""
     resize_width = 0
     if args.get("--width"):
         try:
@@ -159,19 +107,15 @@ def main():
         except ValueError:
             raise ValueError(f"invalid height parameter: {args['--height']}")
 
-    if args.get("--crop"):
-        crop_region = parse_crop_string(args["--crop"])
-    else:
-        crop_region = None
+    return resize_width, resize_height
 
-    ENDPOINT = args["--endpoint"]
-    TOKEN = args["--token"]
-    DETECTOR = args["--detector"]
 
-    STREAM = args["--stream"]
-    STREAM_TYPE = args["--streamtype"]
-    STREAM_TYPE = STREAM_TYPE.lower()
-    if STREAM_TYPE not in [
+def parse_stream_args(args: dict) -> tuple[str | int, str | None]:
+    """Parse and validate stream source arguments"""
+    stream = args["--stream"]
+    stream_type = args["--streamtype"].lower()
+
+    if stream_type not in [
         "infer",
         "device",
         "directory",
@@ -180,139 +124,157 @@ def main():
         "file",
         "image_url",
     ]:
-        raise ValueError(f"Invalid stream type {STREAM_TYPE=}")
-    logger.debug(f"{STREAM_TYPE=}")
-    if STREAM_TYPE == "infer":
-        try:
-            STREAM = int(STREAM)
-        except ValueError:
-            logger.debug(f"{STREAM=} is not an int.  Treating as a filename or url.")
-        STREAM_TYPE = None
+        raise ValueError(f"Invalid stream type {stream_type=}")
 
-    FPS = args["--fps"]
-    try:
-        FPS = float(FPS)
-        logger.debug(f"frames_per_second: {FPS}, seconds_per_frame: {1/FPS}")
-    except ValueError:
-        logger.error(f"Invalid argument {FPS=}. Must be a number.")
-        exit(-1)
-    if FPS == 0:
-        worker_thread_count = 10
-    else:
-        worker_thread_count = math.ceil(FPS)
+    if stream_type == "infer":
+        try:
+            stream = int(stream)
+        except ValueError:
+            logger.debug(f"{stream=} is not an int. Treating as a filename or url.")
+        stream_type = None
 
-    if args.get("--motion"):
-        motion_detect = True
-        motion_threshold = args["--threshold"]
-        post_motion_time = args["--postmotion"]
-        max_frame_interval = args["--maxinterval"]
-        try:
-            motion_threshold = float(motion_threshold)
-        except ValueError:
-            logger.error(f"Invalid arguement threshold={motion_threshold} must be a number")
-            exit(-1)
-        try:
-            post_motion_time = float(post_motion_time)
-        except ValueError:
-            logger.error(f"Invalid arguement postmotion={post_motion_time} must be a number")
-            exit(-1)
-        try:
-            max_frame_interval = float(max_frame_interval)
-        except ValueError:
-            logger.error(f"Invalid arguement maxinterval={max_frame_interval} must be a number")
-            exit(-1)
-        logger.info(
-            f"Motion detection enabled with {motion_threshold=} and post-motion capture of {post_motion_time=} and max interval of {max_frame_interval=}"
-        )
-    else:
-        motion_detect = False
-        motion_threshold = 0  # appease the type checker
-        post_motion_time = 0
-        max_frame_interval = 0
+    return stream, stream_type
+
+
+def parse_motion_args(args: dict) -> tuple[bool, float, float, float]:
+    """Parse and validate motion detection arguments"""
+    if not args.get("--motion"):
         logger.info("Motion detection disabled.")
+        return False, 0, 0, 0
 
-    logger.debug(f"creating groundlight client with {ENDPOINT=} and {TOKEN=}")
-    gl = Groundlight(endpoint=ENDPOINT, api_token=TOKEN)
+    try:
+        threshold = float(args["--threshold"])
+        post_motion = float(args["--postmotion"])
+        max_interval = float(args["--maxinterval"])
+    except ValueError as e:
+        logger.error(f"Invalid motion detection parameter: {e}")
+        sys.exit(-1)
+
+    logger.info(
+        f"Motion detection enabled with threshold={threshold} and post-motion capture of {post_motion}s and max interval of {max_interval}s"
+    )
+    return True, threshold, post_motion, max_interval
+
+
+def main():
+    """Main entry point - parse args and run frame capture loop"""
+    args = docopt.docopt(__doc__)
+    if args.get("--verbose"):
+        logger.level = logging.DEBUG
+        logger.debug(f"{args=}")
+
+    # Parse arguments
+    resize_width, resize_height = parse_resize_args(args)
+    crop_region = parse_crop_string(args["--crop"]) if args.get("--crop") else None
+    stream, stream_type = parse_stream_args(args)
+    motion_detect, motion_threshold, post_motion_time, max_frame_interval = parse_motion_args(args)
+
+    # Setup Groundlight client
+    gl = Groundlight(endpoint=args["--endpoint"], api_token=args["--token"])
     logger.debug(f"groundlight client created, whoami={gl.whoami()}")
-    grabber = FrameGrabber.create_grabber(stream=STREAM, stream_type=STREAM_TYPE, fps_target=FPS)
-    q = Queue()
-    tc = ThreadControl()
-    if motion_detect:
-        m = MotionDetector(pct_threshold=motion_threshold)
-    workers = []
 
-    for i in range(worker_thread_count):
-        thread = Thread(
-            target=frame_processor,
-            kwargs=dict(q=q, client=gl, detector=DETECTOR, control=tc),
+    # Setup frame grabber
+    grabber_config = dict(stream=stream, stream_type=stream_type, fps_target=float(args["--fps"]))
+    grabber = FrameGrabber.create_grabber(**grabber_config)
+
+    # Setup workers
+    fps = float(args["--fps"])
+    worker_count = 10 if fps == 0 else math.ceil(fps)
+    _process_single_frame = partial(process_single_frame, client=gl, detector=args["--detector"])
+    q, tc, workers = setup_workers(fn=_process_single_frame, num_workers=worker_count)
+
+    # Setup motion detection if enabled
+    motion_detector = MotionDetector(pct_threshold=motion_threshold) if motion_detect else None
+
+    # Main capture loop
+    try:
+        run_capture_loop(
+            grabber=grabber,
+            queue=q,
+            fps=float(args["--fps"]),
+            motion_detector=motion_detector,
+            post_motion_time=post_motion_time,
+            max_frame_interval=max_frame_interval,
+            resize_width=resize_width,
+            resize_height=resize_height,
+            crop_region=crop_region,
         )
-        workers.append(thread)
-        thread.start()
-
-    try:
-        desired_delay = 1 / FPS
-    except ZeroDivisionError:
-        desired_delay = 1
-        logger.warning("FPS set to 0.  Using maximum stream rate")
-    start = time.time()
-
-    last_frame_time = time.time()
-    try:
-        while True:
-            start = time.time()
-            frame = grabber.grab()
-            if frame is None:
-                logger.warning(f"No frame captured! {frame=}")
-                continue
-
-            now = time.time()
-            logger.debug(f"captured a new frame after {now-start:.3f}s of size {frame.shape=} ")
-
-            if crop_region:
-                frame = crop_frame(frame, crop_region)
-                logger.debug(f"Cropped to {frame.shape=}")
-
-            if motion_detect:
-                if m.motion_detected(frame):
-                    logger.info(f"Motion detected")
-                    motion_start = time.time()
-                    add_frame_to_queue = True
-                elif time.time() - motion_start < post_motion_time:
-                    logger.debug(
-                        f"adding post motion frame after {(time.time() - motion_start):.3} with {post_motion_time=}"
-                    )
-                    add_frame_to_queue = True
-                elif time.time() - last_frame_time > max_frame_interval:
-                    logger.debug(
-                        f"adding frame after {(time.time()-last_frame_time):.3}s because {max_frame_interval=}s"
-                    )
-                    add_frame_to_queue = True
-                else:
-                    logger.debug("skipping frame per motion detection settings")
-                    add_frame_to_queue = False
-            else:
-                add_frame_to_queue = True
-
-            if add_frame_to_queue:
-                resize_if_needed(frame, resize_width, resize_height)
-                q.put(frame)
-                last_frame_time = time.time()
-
-            now = time.time()
-            if desired_delay > 0:
-                actual_delay = desired_delay - (now - start)
-                if actual_delay < 0:
-                    logger.warning(
-                        f"Falling behind the desired {FPS=}.  Either grabbing frames or putting them into output queue (length={q.qsize()}) is taking too long."
-                    )
-                else:
-                    logger.debug(f"waiting for {actual_delay=:.3}s to capture the next frame.")
-                    time.sleep(actual_delay)
-
     except KeyboardInterrupt:
         logger.info("exiting with KeyboardInterrupt.")
         tc.force_exit()
-        exit(-1)
+        sys.exit(-1)
+
+
+def run_capture_loop(  # noqa: PLR0912 PLR0913
+    grabber: FrameGrabber,
+    queue: Queue,
+    fps: float,
+    motion_detector: MotionDetector | None,
+    post_motion_time: float,
+    max_frame_interval: float,
+    resize_width: int,
+    resize_height: int,
+    crop_region: tuple[float, float, float, float] | None,
+) -> None:
+    """Main capture loop implementation"""
+    # Handle fps=0 case for maximum frame rate
+    desired_delay = 1 / fps if fps > 0 else 0
+    if fps == 0:
+        logger.warning("FPS set to 0. Using maximum stream rate")
+
+    last_frame_time = time.time()
+    motion_start = 0
+
+    while True:
+        start = time.time()
+        frame = grabber.grab()
+        if frame is None:
+            logger.warning("No frame captured!")
+            time.sleep(0.1)  # Brief pause before retrying
+            continue
+
+        now = time.time()
+        logger.debug(f"Captured frame in {now-start:.3f}s, size {frame.shape}")
+
+        # Apply cropping if configured
+        if crop_region:
+            frame = crop_frame(frame, crop_region)
+            logger.debug(f"Cropped to {frame.shape}")
+
+        # Determine if we should process this frame
+        add_frame_to_queue = True
+        if motion_detector:
+            time_since_motion = time.time() - motion_start
+            time_since_last_frame = time.time() - last_frame_time
+
+            if motion_detector.motion_detected(frame):
+                logger.info("Motion detected")
+                motion_start = time.time()
+            elif time_since_motion < post_motion_time:
+                logger.debug(f"Adding post-motion frame ({time_since_motion:.3f}s / {post_motion_time}s)")
+            elif time_since_last_frame > max_frame_interval:
+                logger.debug(f"Adding periodic frame ({time_since_last_frame:.3f}s / {max_frame_interval}s)")
+            else:
+                logger.debug("Skipping frame - no motion detected")
+                add_frame_to_queue = False
+
+        # Process frame if needed
+        if add_frame_to_queue:
+            frame = resize_if_needed(frame, resize_width, resize_height)
+            queue.put(frame)
+            last_frame_time = time.time()
+
+        # Handle frame timing
+        if desired_delay > 0:
+            elapsed_time = time.time() - start
+            actual_delay = desired_delay - elapsed_time
+            if actual_delay < 0:
+                logger.warning(
+                    f"Cannot maintain {fps} FPS - processing taking {now-start:.3f}s (queue size: {queue.qsize()})"
+                )
+            else:
+                logger.debug(f"Waiting {actual_delay:.3f}s until next frame")
+                time.sleep(actual_delay)
 
 
 if __name__ == "__main__":

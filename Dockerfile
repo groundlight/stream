@@ -1,6 +1,12 @@
-FROM python:3.10-slim
-ADD requirements.txt /src/
+FROM python:3.11-slim
+
+# Install dependencies
+ADD pyproject.toml Makefile
 WORKDIR /src
-RUN pip install -r requirements.txt
+RUN make install
+
+# Add source code
 ADD ./src/ /src/
+
+# Run the application
 ENTRYPOINT ["python","stream.py"]
