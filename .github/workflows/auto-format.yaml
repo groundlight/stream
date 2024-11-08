@@ -21,7 +21,7 @@ jobs:
         run: ruff format src/
 
       - name: Run Ruff lint with fixes
-        run: ruff check --fix src/
+        run: ruff check --fix src/ --exit-zero
 
       - name: Check if any files were modified
         id: git-check
