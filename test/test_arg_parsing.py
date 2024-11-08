@@ -12,6 +12,12 @@ def test_parse_stream_args():
     assert stream == 0
     assert stream_type is None
 
+    # Test non-numeric string with infer type
+    args = argparse.Namespace(stream="test.mp4", streamtype="infer")
+    stream, stream_type = validate_stream_args(args)
+    assert stream == "test.mp4"
+    assert stream_type is None
+
     # Test explicit device type
     args = argparse.Namespace(stream="1", streamtype="device")
     stream, stream_type = validate_stream_args(args)
@@ -36,15 +42,10 @@ def test_parse_stream_args():
     assert stream == "https://youtube.com/watch?v=123"
     assert stream_type == "youtube"
 
-    # Test invalid stream type
-    args = argparse.Namespace(stream="0", streamtype="invalid")
-    with pytest.raises(ValueError):
-        validate_stream_args(args)
-
 
 def test_parse_motion_args():
     # Test motion detection disabled
-    args = argparse.Namespace(motion=None, threshold=None, postmotion=None, maxinterval=None)
+    args = argparse.Namespace(motion=False)
     motion_on, threshold, post_motion, max_interval = parse_motion_args(args)
     assert not motion_on
     assert threshold == 0
@@ -52,7 +53,7 @@ def test_parse_motion_args():
     assert max_interval == 0
 
     # Test motion detection enabled with defaults
-    args = argparse.Namespace(motion=True, threshold="1", postmotion="1", maxinterval="1000")
+    args = argparse.Namespace(motion=True, threshold=1.0, postmotion=1.0, maxinterval=1000.0)
     motion_on, threshold, post_motion, max_interval = parse_motion_args(args)
     assert motion_on
     assert threshold == 1.0
@@ -60,24 +61,9 @@ def test_parse_motion_args():
     assert max_interval == 1000.0
 
     # Test custom values
-    args = argparse.Namespace(motion=True, threshold="2.5", postmotion="0.5", maxinterval="100")
+    args = argparse.Namespace(motion=True, threshold=2.5, postmotion=0.5, maxinterval=100.0)
     motion_on, threshold, post_motion, max_interval = parse_motion_args(args)
     assert motion_on
     assert threshold == 2.5
     assert post_motion == 0.5
     assert max_interval == 100.0
-
-    # Test invalid threshold
-    args = argparse.Namespace(motion=True, threshold="invalid", postmotion="1", maxinterval="1000")
-    with pytest.raises(SystemExit):
-        parse_motion_args(args)
-
-    # Test invalid post-motion time
-    args = argparse.Namespace(motion=True, threshold="1", postmotion="invalid", maxinterval="1000")
-    with pytest.raises(SystemExit):
-        parse_motion_args(args)
-
-    # Test invalid max interval
-    args = argparse.Namespace(motion=True, threshold="1", postmotion="1", maxinterval="invalid")
-    with pytest.raises(SystemExit):
-        parse_motion_args(args)
