@@ -29,4 +29,4 @@ ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Run the application
-ENTRYPOINT ["python", "-m", "stream.stream"]
+ENTRYPOINT ["python", "-m", "stream"]

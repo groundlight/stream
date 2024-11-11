@@ -1,8 +1,6 @@
 import argparse
 
-import pytest
-
-from stream.stream import parse_motion_args, validate_stream_args
+from stream.main import parse_motion_args, validate_stream_args
 
 
 def test_parse_stream_args():

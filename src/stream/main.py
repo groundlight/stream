@@ -172,7 +172,11 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
 
 def main():
     """Main entry point - parse args and run frame capture loop"""
-    parser = argparse.ArgumentParser(description=HELP_TEXT)
+    parser = argparse.ArgumentParser(
+        description=HELP_TEXT,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        usage="python -m stream -t TOKEN -d DETECTOR [options]",
+    )
 
     # Required arguments
     parser.add_argument("-t", "--token", required=True, help="Groundlight API token for authentication.")
