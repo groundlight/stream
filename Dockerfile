@@ -1,30 +1,32 @@
 FROM python:3.11-slim-bookworm
 
-# Install build dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
     gcc \
-    git \
-    libpq-dev \
-    make \
-    pkg-config \
     libgl1 \
     libglib2.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-
-# Install dependencies
+# Use uv to install python dependencies.
 WORKDIR /app
-COPY pyproject.toml uv.lock README.md* ./
-RUN uv sync --no-dev --frozen
+COPY pyproject.toml uv.lock ./
+
+# Mounting the uv binary like this means that it wont
+# be left behind in the final version of the Image.
+RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
+    uv sync --no-dev --frozen --no-install-project --no-editable --no-cache
 
 # Add source code
-COPY ./src/ /app/src/
-RUN uv sync --no-dev --frozen \
-    && uv pip install -e .
+COPY . /app/
+
+# Install the project
+RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
+    uv sync --no-dev --frozen --no-editable --no-cache
+
+# Activate the virtual environment
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Run the application
-ENTRYPOINT ["uv", "run", "python", "-m", "stream.stream"]
+ENTRYPOINT ["python", "-m", "stream.stream"]

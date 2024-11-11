@@ -227,8 +227,8 @@ def main():
     )
 
     # Image pre-processing
-    parser.add_argument("-w", "--width", type=int, default=0, help="Resize width in pixels.")
-    parser.add_argument("-y", "--height", type=int, default=0, help="Resize height in pixels.")
+    parser.add_argument("-w", "--width", dest="resize_width", type=int, default=0, help="Resize width in pixels.")
+    parser.add_argument("-y", "--height", dest="resize_height", type=int, default=0, help="Resize height in pixels.")
     parser.add_argument(
         "-c",
         "--crop",
