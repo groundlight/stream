@@ -27,9 +27,8 @@ $ docker pull groundlight/stream
 Command line options are displayed like:
 
 ``` shell
-$ docker run groundlight/stream --help
-usage: stream.py [-h] -t TOKEN -d DETECTOR [-e ENDPOINT] [-s STREAM] [-x {infer,device,directory,rtsp,youtube,file,image_url}] [-f FPS] [-v] [-m] [-r THRESHOLD] [-p POSTMOTION] [-i MAXINTERVAL]
-                 [-w WIDTH] [-y HEIGHT] [-c CROP]
+$ docker run -it groundlight/stream -h
+usage: python -m stream -t TOKEN -d DETECTOR [options]
 
 Groundlight Stream Processor
 
@@ -64,9 +63,9 @@ options:
                         Seconds to capture after motion detected. Defaults to 1 second.
   -i MAXINTERVAL, --maxinterval MAXINTERVAL
                         Max seconds between frames even without motion. Defaults to 1000 seconds.
-  -w WIDTH, --width WIDTH
+  -w RESIZE_WIDTH, --width RESIZE_WIDTH
                         Resize width in pixels.
-  -y HEIGHT, --height HEIGHT
+  -y RESIZE_HEIGHT, --height RESIZE_HEIGHT
                         Resize height in pixels.
   -c CROP, --crop CROP  Crop region, specified as fractions (0-1) of each dimension (e.g. '0.25,0.2,0.8,0.9').
 ```
