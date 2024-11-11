@@ -1,8 +1,0 @@
-groundlight==0.17.6
-docopt==0.6.2
-jsonformatter==0.3.2
-numpy==1.22.0
-opencv-python-headless==4.8.1.78
-PyYAML==6.0.2
-youtube-dl==2021.12.17
-pafy==0.5.5
