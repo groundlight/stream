@@ -550,15 +550,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pafy"
-version = "0.5.5"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7e/02/b70f4d2ad64bbc7d2a00018c6545d9b9039208553358534e73e6dd5bbaf6/pafy-0.5.5.tar.gz", hash = "sha256:364f1d1312c89582d97dc7225cf6858cde27cb11dfd64a9c2bab1a2f32133b1e", size = 29769 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/74/69/829919eeadff695338f98fa12bb99e45490761a2010c8d688d88b6df194a/pafy-0.5.5-py2.py3-none-any.whl", hash = "sha256:769e35aa6988686d47fa2ab235d15c9952c7873c470f6a6b05cf6bcd93e62515", size = 35503 },
-]
-
-[[package]]
 name = "pillow"
 version = "10.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -755,6 +746,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pytube"
+version = "15.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/e7/16fec46c8d255c4bbc4b185d89c91dc92cdb802836570d8004d0db169c91/pytube-15.0.0.tar.gz", hash = "sha256:076052efe76f390dfa24b1194ff821d4e86c17d41cb5562f3a276a8bcbfc9d1d", size = 67229 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/51/64/bcf8632ed2b7a36bbf84a0544885ffa1d0b4bcf25cc0903dba66ec5fdad9/pytube-15.0.0-py3-none-any.whl", hash = "sha256:07b9904749e213485780d7eb606e5e5b8e4341aa4dccf699160876da00e12d78", size = 57594 },
+]
+
+[[package]]
 name = "pytz"
 version = "2024.2"
 source = { registry = "https://pypi.org/simple" }
@@ -914,9 +914,8 @@ dependencies = [
     { name = "numpy", version = "1.24.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "opencv-python-headless" },
-    { name = "pafy" },
+    { name = "pytube" },
     { name = "pyyaml" },
-    { name = "youtube-dl" },
 ]
 
 [package.optional-dependencies]
@@ -932,11 +931,10 @@ requires-dist = [
     { name = "jsonformatter", specifier = ">=0.3.2" },
     { name = "numpy", specifier = "<2.0.0" },
     { name = "opencv-python-headless", specifier = ">=4.10.0.84" },
-    { name = "pafy", specifier = ">=0.5.5" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
+    { name = "pytube", specifier = "==15.0.0" },
     { name = "pyyaml", specifier = "==6.0.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.7.2" },
-    { name = "youtube-dl", specifier = "==2021.12.17" },
 ]
 
 [[package]]
@@ -992,15 +990,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e5/ae/d9055527b2e49232bbcca175c091aee82a4ba27ee137e33cf9f2f21fb3cd/WSDiscovery-2.0.0.tar.gz", hash = "sha256:b0f9c36a11f9a56905223915c33c295f4240a6a25de60b32b305cbe69202ee78", size = 23495 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1a/ed/a415d6e41e9d46a2c4cfc60906d928909886491e4a70252301b93382bfba/WSDiscovery-2.0.0-py3-none-any.whl", hash = "sha256:749400746d077d38c560f6bf89043421974809f93d92ad109668b95e7690b4a6", size = 31326 },
-]
-
-[[package]]
-name = "youtube-dl"
-version = "2021.12.17"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/01/4f/ab0d0806f4d818168d0ec833df14078c9d1ddddb5c42fa7bfb6f15ecbfa7/youtube_dl-2021.12.17.tar.gz", hash = "sha256:bc59e86c5d15d887ac590454511f08ce2c47698d5a82c27bfe27b5d814bbaed2", size = 1555640 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/40/93/65c208f51895f74bbfea1423974c54fff1d1c4e9a97ebee1011b021554b8/youtube_dl-2021.12.17-py2.py3-none-any.whl", hash = "sha256:f1336d5de68647e0364a47b3c0712578e59ec76f02048ff5c50ef1c69d79cd55", size = 1902317 },
 ]
 
 [[package]]

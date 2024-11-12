@@ -10,7 +10,7 @@ from threading import Lock, Thread
 
 import cv2
 import numpy as np
-import pafy
+from pytube import YouTube
 
 logger = logging.getLogger("groundlight.stream")
 
@@ -194,8 +194,10 @@ class YouTubeFrameGrabber(FrameGrabber):
 
     def __init__(self, stream=None):
         self.stream = stream
-        self.video = pafy.new(self.stream)
-        self.best_video = self.video.getbest(preftype="mp4")
+        self.yt = YouTube(self.stream)
+        self.best_video = (
+            self.yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc().first()
+        )
         self.capture = cv2.VideoCapture(self.best_video.url)
         logger.debug(f"initialized video capture with backend={self.capture.getBackendName()}")
         if not self.capture.isOpened():
@@ -203,8 +205,10 @@ class YouTubeFrameGrabber(FrameGrabber):
         self.capture.release()
 
     def reset_stream(self):
-        self.video = pafy.new(self.stream)
-        self.best_video = self.video.getbest(preftype="mp4")
+        self.yt = YouTube(self.stream)
+        self.best_video = (
+            self.yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc().first()
+        )
         self.capture = cv2.VideoCapture(self.best_video.url)
         logger.debug(f"initialized video capture with backend={self.capture.getBackendName()}")
         if not self.capture.isOpened():

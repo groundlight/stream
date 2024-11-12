@@ -1,6 +1,6 @@
 [project]
 name = "stream"
-version = "0.5.0"
+version = "0.5.1"
 description = "Groundlight Stream Processor - Container for analyzing video using RTSP etc"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -11,8 +11,7 @@ dependencies = [
     "numpy<2.0.0",
     "opencv-python-headless>=4.10.0.84",
     "PyYAML==6.0.2",
-    "youtube-dl==2021.12.17",
-    "pafy>=0.5.5"
+    "pytube==15.0.0",
 ]
 
 [project.optional-dependencies]
