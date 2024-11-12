@@ -10,7 +10,7 @@ from threading import Lock, Thread
 
 import cv2
 import numpy as np
-import pafy
+import streamlink
 
 logger = logging.getLogger("groundlight.stream")
 
@@ -194,8 +194,11 @@ class YouTubeFrameGrabber(FrameGrabber):
 
     def __init__(self, stream=None):
         self.stream = stream
-        self.video = pafy.new(self.stream)
-        self.best_video = self.video.getbest(preftype="mp4")
+        streams = streamlink.streams(self.stream)
+        if "best" not in streams:
+            raise ValueError("No available HLS stream for this live video.")
+        self.best_video = streams["best"]
+
         self.capture = cv2.VideoCapture(self.best_video.url)
         logger.debug(f"initialized video capture with backend={self.capture.getBackendName()}")
         if not self.capture.isOpened():
@@ -203,8 +206,11 @@ class YouTubeFrameGrabber(FrameGrabber):
         self.capture.release()
 
     def reset_stream(self):
-        self.video = pafy.new(self.stream)
-        self.best_video = self.video.getbest(preftype="mp4")
+        streams = streamlink.streams(self.stream)
+        if "best" not in streams:
+            raise ValueError("No available HLS stream for this live video.")
+        self.best_video = streams["best"]
+
         self.capture = cv2.VideoCapture(self.best_video.url)
         logger.debug(f"initialized video capture with backend={self.capture.getBackendName()}")
         if not self.capture.isOpened():
