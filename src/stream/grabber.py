@@ -212,7 +212,6 @@ class YouTubeFrameGrabber(FrameGrabber):
         self.best_video = streams["best"]
 
         self.capture = cv2.VideoCapture(self.best_video.url)
-        self.capture = cv2.VideoCapture(self.best_video.url)
         logger.debug(f"initialized video capture with backend={self.capture.getBackendName()}")
         if not self.capture.isOpened():
             raise ValueError(f"could not initially open {self.stream=}")
