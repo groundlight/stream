@@ -63,10 +63,10 @@ jobs:
 
       - name: Update Docker Hub description from README file
         if: github.event_name != 'pull_request'
-        uses: peter-evans/dockerhub-description@v3
+        uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: groundlight/stream
           readme-filepath: ./README.md
           enable-url-completion: true
