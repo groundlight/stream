@@ -170,6 +170,19 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
                 time.sleep(actual_delay)
 
 
+def print_banner(gl: Groundlight, args: argparse.Namespace) -> None:
+    detector = gl.get_detector(id=args.detector)
+    motdet = "enabled" if args.motion else "disabled"
+    print("==================================================")
+    print("Groundlight Stream Processor")
+    print(f"  Target Detector: {detector}")
+    print(f"  Groundlight Endpoint: {gl.endpoint}")
+    print(f"  Whoami: {gl.whoami()}")
+    print(f"  Frames/sec: {args.fps}    (Seconds/frame: {1/args.fps:.3f})")
+    print(f"  Motion Detection: {motdet}")
+    print("==================================================")
+
+
 def main():
     """Main entry point - parse args and run frame capture loop"""
     parser = argparse.ArgumentParser(
@@ -266,6 +279,8 @@ def main():
 
     # Setup motion detection if enabled
     motion_detector = MotionDetector(pct_threshold=motion_threshold) if motion_detect else None
+
+    print_banner(gl=gl, args=args)
 
     # Main capture loop
     try:

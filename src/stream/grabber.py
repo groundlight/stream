@@ -158,15 +158,33 @@ class RTSPFrameGrabber(FrameGrabber):
     latest frame when explicitly requested.
     """
 
-    def __init__(self, stream=None):
+    def __init__(self, stream: str, max_fps=10, keep_connection_open=True):
+        self.rtsp_url = stream
+        self.max_fps = max_fps
+        self.keep_connection_open = keep_connection_open
+
         self.lock = Lock()
-        self.stream = stream
-        self.capture = cv2.VideoCapture(self.stream)
+        self.run = True
+
+        self.capture = cv2.VideoCapture(self.rtsp_url)
         logger.debug(f"initialized video capture with backend={self.capture.getBackendName()}")
+
+        if self.keep_connection_open:
+            self._open_connection()
+            self._init_drain_thread()
+
+    def _open_connection(self):
+        self.capture = cv2.VideoCapture(self.rtsp_url)
         if not self.capture.isOpened():
-            raise ValueError(f"could not open {self.stream=}")
-        self.thread = Thread(target=self._drain, name="drain_thread")
-        self.thread.start()
+            raise ValueError(
+                f"Could not open RTSP stream: {self.rtsp_url}. Is the RTSP URL correct? Is the camera connected to the network?"
+            )
+        logger.debug(f"Initialized video capture with backend={self.capture.getBackendName()}")
+
+    def _close_connection(self):
+        with self.lock:
+            if self.capture is not None:
+                self.capture.release()
 
     def grab(self):
         start = time.time()
@@ -179,11 +197,42 @@ class RTSPFrameGrabber(FrameGrabber):
             logger.debug(f"read the frame in {1000*(now-start):.1f}ms")
             return frame
 
+    def _grab_implementation(self) -> np.ndarray:
+        if not self.keep_connection_open:
+            self._open_connection()
+            try:
+                return self._grab_open()
+            finally:
+                self._close_connection()
+        else:
+            return self._grab_open()
+
+    def _grab_open(self) -> np.ndarray:
+        with self.lock:
+            ret, frame = self.capture.retrieve() if self.keep_connection_open else self.capture.read()
+        if not ret:
+            logger.error(f"Could not read frame from {self.capture}")
+        return frame
+
+    def release(self) -> None:
+        if self.keep_connection_open:
+            self.run = False  # to stop the buffer drain thread
+            self._close_connection()
+
+    def _init_drain_thread(self):
+        if not self.keep_connection_open:
+            return  # No need to drain if we're not keeping the connection open
+
+        self.drain_rate = 1 / self.max_fps
+        thread = Thread(target=self._drain)
+        thread.daemon = True
+        thread.start()
+
     def _drain(self):
-        logger.debug("starting thread to drain the video capture buffer")
-        while True:
+        while self.run:
             with self.lock:
-                ret = self.capture.grab()  # just grab and don't decode
+                _ = self.capture.grab()
+            time.sleep(self.drain_rate)
 
 
 class YouTubeFrameGrabber(FrameGrabber):

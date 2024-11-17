@@ -121,10 +121,12 @@ To connect an RTSP stream from a camera or other source, you'll need the RTSP UR
 Once you have the RTSP URL, pass it to the `-s` parameter:
 
 ``` shell
+RTSP_URL="rtsp://username:password@camera_ip_address:554/path/to/stream"
+
 docker run groundlight/stream \
     -t api_29imEXAMPLE \
     -d det_2MiD5Elu8bza7sil9l7KPpr694a \
-    -s "rtsp://username:password@camera_ip_address:554/path/to/stream" \
+    -s "${RTSP_URL}" \
     -f 1
 ```
 
