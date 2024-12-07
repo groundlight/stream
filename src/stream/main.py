@@ -11,11 +11,11 @@ from queue import Queue
 
 import cv2
 import yaml
-from framegrab import MotionDetector
+from framegrab import FrameGrabber, MotionDetector
 from groundlight import Groundlight
 
-from stream.grabber import FrameGrabber
-from stream.image_processing import crop_frame, parse_crop_string, resize_if_needed
+from stream.grabber2 import StreamType, framegrabber_factory
+from stream.image_processing import crop_frame, parse_crop_string
 from stream.threads import setup_workers
 
 fname = os.path.join(os.path.dirname(__file__), "logging.yaml")
@@ -68,7 +68,7 @@ def process_single_frame(frame: cv2.Mat, gl: Groundlight, detector: str) -> None
         logger.error(f"Exception while processing frame : {e}", exc_info=True)
 
 
-def validate_stream_args(args: argparse.Namespace) -> tuple[str | int, str | None]:
+def validate_stream_args(args: argparse.Namespace) -> tuple[str | int, StreamType | None]:
     """Parse and validate stream source arguments"""
     stream = args.stream
     stream_type = args.streamtype.lower()
@@ -79,6 +79,8 @@ def validate_stream_args(args: argparse.Namespace) -> tuple[str | int, str | Non
         except ValueError:
             logger.debug(f"{stream=} is not an int. Treating as a filename or url.")
         stream_type = None
+    else:
+        stream_type = StreamType(stream_type)
 
     return stream, stream_type
 
@@ -103,8 +105,6 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
     motion_detector: MotionDetector | None,
     post_motion_time: float,
     max_frame_interval: float,
-    resize_width: int,
-    resize_height: int,
     crop_region: tuple[float, float, float, float] | None,
 ) -> None:
     """Main capture loop implementation"""
@@ -128,10 +128,10 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
         now = time.time()
         logger.debug(f"Captured frame in {now-start:.3f}s, size {frame.shape}")
 
-        # Apply cropping if configured
+        # Apply cropping if configured, needs to happen before motion detection
         if crop_region:
             original_shape = frame.shape
-            frame = crop_frame(frame, crop_region)
+            frame = crop_frame(frame, crop_region)  # type: ignore
             logger.debug(f"Cropped frame from {original_shape} to {frame.shape}")
 
         # Determine if we should process this frame
@@ -153,7 +153,6 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
 
         # Add frame to work queue
         if add_frame_to_queue:
-            frame = resize_if_needed(frame, resize_width, resize_height)
             queue.put(frame)
             last_frame_time = time.time()
 
@@ -243,6 +242,15 @@ def main():
         help="Max seconds between frames even without motion. Defaults to 1000 seconds.",
     )
 
+    # Stream options
+    parser.add_argument(
+        "-k",
+        "--keep-connection-open",
+        action="store_true",
+        default=False,
+        help="Keep connection open for low-latency frame grabbing (uses more CPU). Defaults to false.",
+    )
+
     # Image pre-processing
     parser.add_argument("-w", "--width", dest="resize_width", type=int, default=0, help="Resize width in pixels.")
     parser.add_argument("-y", "--height", dest="resize_height", type=int, default=0, help="Resize height in pixels.")
@@ -269,8 +277,14 @@ def main():
     logger.debug(f"Groundlight client created, whoami={gl.whoami()}")
 
     # Setup frame grabber
-    grabber_config = dict(stream=stream, stream_type=stream_type, fps_target=args.fps)
-    grabber = FrameGrabber.create_grabber(**grabber_config)
+    grabber = framegrabber_factory(
+        stream=stream,
+        stream_type=stream_type,
+        height=args.resize_height,
+        width=args.resize_width,
+        max_fps=args.fps,
+        keep_connection_open=args.keep_connection_open,
+    )
 
     # Setup workers
     worker_count = 10 if args.fps == 0 else math.ceil(args.fps)
@@ -291,8 +305,6 @@ def main():
             motion_detector=motion_detector,
             post_motion_time=post_motion_time,
             max_frame_interval=max_frame_interval,
-            resize_width=args.resize_width,
-            resize_height=args.resize_height,
             crop_region=crop_region,
         )
     except KeyboardInterrupt:

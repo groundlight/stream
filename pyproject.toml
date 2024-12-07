@@ -3,7 +3,7 @@ name = "stream"
 version = "0.5.2"
 description = "Groundlight Stream Processor - Container for analyzing video using RTSP etc"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "framegrab>=0.7.0",
     "groundlight>=0.18.4",

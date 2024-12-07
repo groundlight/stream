@@ -19,7 +19,7 @@ class FrameGrabber(metaclass=ABCMeta):
     @staticmethod
     def create_grabber(stream=None, stream_type=None, **kwargs):
         logger.debug(f"Input {stream=} (type {type(stream)}")
-        if (type(stream) == int and not streamtype) or stream_type == "device":
+        if (type(stream) == int and not stream_type) or stream_type == "device":
             logger.debug("Looking for camera {stream=}")
             return DeviceFrameGrabber(stream=stream)
         elif ((type(stream) == str) and (stream.find("*") != -1) and not stream_type) or stream_type == "directory":
