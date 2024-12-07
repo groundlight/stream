@@ -14,7 +14,7 @@ import yaml
 from framegrab import FrameGrabber, MotionDetector
 from groundlight import Groundlight
 
-from stream.grabber2 import StreamType, framegrabber_factory
+from stream.grabber import StreamType, framegrabber_factory
 from stream.image_processing import crop_frame, parse_crop_string
 from stream.threads import setup_workers
 
@@ -28,18 +28,19 @@ HELP_TEXT = """Groundlight Stream Processor
 A command-line tool that captures frames from a video source and sends them to a Groundlight detector for analysis.
 
 Supports a variety of input sources including:
-- Video devices (webcams)
-- Video files (mp4, etc)
+- Video devices (usb cameras, webcams, etc)
 - RTSP streams
-- YouTube videos
+- YouTube Live streams
+- HLS streams
 - Image directories
+- Video files (mp4, etc)
 - Image URLs
 """
 
-
 # TODO list:
-# - Remove multithreading - not needed now that the Groundlight client supports ask_async
-# - Use the FrameGrabber class from the framegrab library
+# - Reintroduce support for image URLs in upstream framegrab lib
+# - Reintroduce support for image directories in upstream framegrab lib
+# - Reintroduce support for video files in upstream framegrab lib
 
 
 def process_single_frame(frame: cv2.Mat, gl: Groundlight, detector: str) -> None:
@@ -51,21 +52,22 @@ def process_single_frame(frame: cv2.Mat, gl: Groundlight, detector: str) -> None
         detector: ID of detector to query
     """
     try:
-        # Prepare image
+        # Encode image to JPEG
         start = time.time()
-        is_success, buffer = cv2.imencode(".jpg", frame)
-        io_buf = io.BytesIO(buffer)  # type: ignore
-        end = time.time()
-        logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
+        _, buffer = cv2.imencode(".jpg", frame)
+        io_buf = io.BytesIO(buffer)
+        encode_time = time.time() - start
+        logger.debug(f"Encoded image to JPEG in {encode_time*1000:.1f}ms")
 
-        # Submit image to Groundlight
+        # Submit to Groundlight
         start = time.time()
         image_query = gl.ask_async(detector=detector, image=io_buf)
-        end = time.time()
-        logger.debug(f"{image_query=}")
-        logger.info(f"API time for image {1000*(end-start):.1f}ms")
+        api_time = time.time() - start
+        logger.debug(f"Submitted image query via gl.ask_async() in {api_time*1000:.1f}ms")
+        logger.debug(f"Image query response:\n{image_query.model_dump_json(indent=2)}")
+
     except Exception as e:
-        logger.error(f"Exception while processing frame : {e}", exc_info=True)
+        logger.error(f"Failed to process frame: {e}", exc_info=True)
 
 
 def validate_stream_args(args: argparse.Namespace) -> tuple[str | int, StreamType | None]:
@@ -126,7 +128,7 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
             continue
 
         now = time.time()
-        logger.debug(f"Captured frame in {now-start:.3f}s, size {frame.shape}")
+        logger.debug(f"Grabbed frame in {now-start:.3f}s, size {frame.shape}")
 
         # Apply cropping if configured, needs to happen before motion detection
         if crop_region:
@@ -248,7 +250,7 @@ def main():
         "--keep-connection-open",
         action="store_true",
         default=False,
-        help="Keep connection open for low-latency frame grabbing (uses more CPU). Defaults to false.",
+        help="Keep connection open for low-latency frame grabbing (uses more CPU and network bandwidth). Defaults to false.",
     )
 
     # Image pre-processing
@@ -257,7 +259,7 @@ def main():
     parser.add_argument(
         "-c",
         "--crop",
-        default="0,0,1,1",
+        default=None,
         help="Crop region, specified as fractions (0-1) of each dimension (e.g. '0.25,0.2,0.8,0.9').",
     )
 

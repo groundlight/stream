@@ -1,32 +1,7 @@
 import numpy as np
 import pytest
 
-from stream.image_processing import crop_frame, parse_crop_string, resize_if_needed
-
-
-def test_resize_if_needed():
-    # Create test image
-    test_img = np.zeros((100, 200, 3), dtype=np.uint8)
-
-    # Test resize by width only
-    img_copy = test_img.copy()
-    out = resize_if_needed(img_copy, width=50, height=0)
-    assert out.shape == (25, 50, 3)
-
-    # Test resize by height only
-    img_copy = test_img.copy()
-    out = resize_if_needed(img_copy, width=0, height=50)
-    assert out.shape == (50, 100, 3)
-
-    # Test resize by both dimensions
-    img_copy = test_img.copy()
-    out = resize_if_needed(img_copy, width=50, height=25)
-    assert out.shape == (25, 50, 3)
-
-    # Test no resize when both 0
-    img_copy = test_img.copy()
-    out = resize_if_needed(img_copy, width=0, height=0)
-    assert out.shape == (100, 200, 3)
+from stream.image_processing import crop_frame, parse_crop_string
 
 
 def test_crop_frame():

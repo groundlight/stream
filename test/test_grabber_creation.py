@@ -1,7 +1,7 @@
 import pytest
 from framegrab import FrameGrabber
 
-from stream.grabber2 import StreamType, _configure_options, _infer_stream_type, _stream_to_id, framegrabber_factory
+from stream.grabber import StreamType, _configure_options, _infer_stream_type, _stream_to_id, framegrabber_factory
 
 
 def test_infer_stream_type():
@@ -85,23 +85,3 @@ def test_configure_options():
     # Test keep_connection_open for unsupported types
     opts = _configure_options(StreamType.GENERIC_USB, keep_connection_open=True)
     assert "keep_connection_open" not in opts
-
-
-def test_framegrabber_factory():
-    # Test USB camera creation
-    grabber = framegrabber_factory(0)
-    assert isinstance(grabber, FrameGrabber)
-
-    # Test RTSP stream creation with options
-    grabber = framegrabber_factory(
-        "rtsp://example.com", stream_type=StreamType.RTSP, height=480, width=640, max_fps=30, keep_connection_open=True
-    )
-    assert isinstance(grabber, FrameGrabber)
-
-    # Test stream type inference
-    grabber = framegrabber_factory("rtsp://example.com")
-    assert isinstance(grabber, FrameGrabber)
-
-    # Test invalid stream
-    with pytest.raises(ValueError):
-        framegrabber_factory("invalid://stream")

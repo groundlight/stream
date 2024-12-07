@@ -22,10 +22,10 @@ install-dev:
 	pip install -e .[dev]
 
 install-uv:
-	uv pip install -e .
+	uv sync
 
 install-dev-uv:
-	uv pip install -e .[dev]
+	uv sync --all-extras
 
 test:
 	pytest

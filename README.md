@@ -35,39 +35,40 @@ Groundlight Stream Processor
 A command-line tool that captures frames from a video source and sends them to a Groundlight detector for analysis.
 
 Supports a variety of input sources including:
-- Video devices (webcams)
-- Video files (mp4, etc)
+- Video devices (usb cameras, webcams, etc)
 - RTSP streams
-- YouTube videos
+- YouTube Live streams
+- HLS streams
 - Image directories
+- Video files (mp4, etc)
 - Image URLs
 
 options:
   -h, --help            show this help message and exit
-  -t TOKEN, --token TOKEN
-                        Groundlight API token for authentication.
-  -d DETECTOR, --detector DETECTOR
+  -t, --token TOKEN     Groundlight API token for authentication.
+  -d, --detector DETECTOR
                         Detector ID to send ImageQueries to.
-  -e ENDPOINT, --endpoint ENDPOINT
+  -e, --endpoint ENDPOINT
                         API endpoint to target. For example, could be pointed at an edge-endpoint proxy server (https://github.com/groundlight/edge-endpoint).
-  -s STREAM, --stream STREAM
-                        Video source. A device ID, filename, or URL. Defaults to device ID '0'.
-  -x {infer,device,directory,rtsp,youtube,file,image_url}, --streamtype {infer,device,directory,rtsp,youtube,file,image_url}
+  -s, --stream STREAM   Video source. A device ID, filename, or URL. Defaults to device ID '0'.
+  -x, --streamtype {infer,device,directory,rtsp,youtube,file,image_url}
                         Source type. Defaults to 'infer' which will attempt to set this value based on --stream.
-  -f FPS, --fps FPS     Frames per second to capture (0 for max rate). Defaults to 1 FPS.
+  -f, --fps FPS         Frames per second to capture (0 for max rate). Defaults to 1 FPS.
   -v, --verbose         Enable debug logging.
   -m, --motion          Enables motion detection, which is disabled by default.
-  -r THRESHOLD, --threshold THRESHOLD
+  -r, --threshold THRESHOLD
                         Motion detection threshold (% pixels changed). Defaults to 1%.
-  -p POSTMOTION, --postmotion POSTMOTION
+  -p, --postmotion POSTMOTION
                         Seconds to capture after motion detected. Defaults to 1 second.
-  -i MAXINTERVAL, --maxinterval MAXINTERVAL
+  -i, --maxinterval MAXINTERVAL
                         Max seconds between frames even without motion. Defaults to 1000 seconds.
-  -w RESIZE_WIDTH, --width RESIZE_WIDTH
+  -k, --keep-connection-open
+                        Keep connection open for low-latency frame grabbing (uses more CPU and network bandwidth). Defaults to false.
+  -w, --width RESIZE_WIDTH
                         Resize width in pixels.
-  -y RESIZE_HEIGHT, --height RESIZE_HEIGHT
+  -y, --height RESIZE_HEIGHT
                         Resize height in pixels.
-  -c CROP, --crop CROP  Crop region, specified as fractions (0-1) of each dimension (e.g. '0.25,0.2,0.8,0.9').
+  -c, --crop CROP       Crop region, specified as fractions (0-1) of each dimension (e.g. '0.25,0.2,0.8,0.9').
 ```
 
 Start sending frames and getting predictions and labels using your own API token and detector ID:
@@ -109,10 +110,11 @@ docker run groundlight/stream \
     -t api_29imEXAMPLE \
     -d det_2MiD5Elu8bza7sil9l7KPpr694a \
     -s "${YOUTUBE_URL}" \
-    -f 1
+    -k \
+    -f 5
 ```
 
-Replace `YOUTUBE_URL` with the url of the YouTube video you are interested in.
+Replace `YOUTUBE_URL` with the url of the YouTube video you are interested in. The `-k` parameter is used to keep the connection open for low-latency frame grabbing. This uses more CPU and network bandwidth but can provide faster frame rates.
 
 ### Connecting an RTSP Stream
 
