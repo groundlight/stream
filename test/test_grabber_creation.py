@@ -1,7 +1,6 @@
 import pytest
-from framegrab import FrameGrabber
 
-from stream.grabber import StreamType, _configure_options, _infer_stream_type, _stream_to_id, framegrabber_factory
+from stream.grabber import StreamType, _configure_options, _infer_stream_type, _stream_to_id
 
 
 def test_infer_stream_type():
@@ -27,12 +26,6 @@ def test_infer_stream_type():
         _infer_stream_type(1.0)
     with pytest.raises(ValueError):
         _infer_stream_type("invalid://stream")
-
-    # Test unimplemented types
-    with pytest.raises(NotImplementedError):
-        _infer_stream_type("http://example.com/image.jpg")
-    with pytest.raises(NotImplementedError):
-        _infer_stream_type("*.jpg")
 
 
 def test_stream_to_id():
@@ -67,6 +60,9 @@ def test_configure_options():
     # Test max_fps option
     opts = _configure_options(StreamType.RTSP, max_fps=30)
     assert opts["max_fps"] == 30
+
+    opts = _configure_options(StreamType.FILE, max_fps=40)
+    assert opts["max_fps"] == 40
 
     # Test max_fps warning for unsupported types
     opts = _configure_options(StreamType.GENERIC_USB, max_fps=30)

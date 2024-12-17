@@ -13,9 +13,7 @@ class StreamType(StrEnum):
     RTSP = "rtsp"
     HLS = "hls"
     YOUTUBE_LIVE = "youtube_live"
-    DIRECTORY = "directory"  # Not implemented yet
-    FILE = "file"  # Not implemented yet
-    IMAGE_URL = "image_url"  # Not implemented yet
+    FILE = "file"
 
 
 def _infer_stream_type(stream: str | int) -> StreamType:
@@ -38,11 +36,8 @@ def _infer_stream_type(stream: str | int) -> StreamType:
             return StreamType.YOUTUBE_LIVE
         raise NotImplementedError("Image URL stream type is not supported yet")
 
-    # Check file patterns
-    if "*" in stream:
-        raise NotImplementedError("Directory stream type is not supported yet")
     if Path(stream).is_file():
-        raise NotImplementedError("File stream type is not supported yet")
+        return StreamType.FILE
 
     raise ValueError(f"Could not infer stream type from: {stream}")
 
@@ -56,6 +51,8 @@ def _stream_to_id(stream: str | int, stream_type: StreamType) -> dict[str, str |
         return {"hls_url": stream}
     elif stream_type == StreamType.GENERIC_USB:
         return {"serial_number": stream}
+    elif stream_type == StreamType.FILE:
+        return {"filename": stream}
     return None
 
 
@@ -74,7 +71,7 @@ def _configure_options(
         options["resolution.width"] = width
 
     if max_fps is not None:
-        if stream_type == StreamType.RTSP:
+        if stream_type in [StreamType.RTSP, StreamType.FILE]:
             options["max_fps"] = max_fps
         else:
             logger.warning(f"max_fps is not supported for stream type {stream_type}")

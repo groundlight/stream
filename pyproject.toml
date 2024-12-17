@@ -5,8 +5,8 @@ description = "Groundlight Stream Processor - Container for analyzing video usin
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "framegrab>=0.8.0",
-    "groundlight>=0.20.0",
+    "framegrab>=0.9.0",
+    "groundlight>=0.21.0",
     "jsonformatter>=0.3.2",
     "numpy<2.0.0",
     "opencv-python-headless>=4.10.0.84",

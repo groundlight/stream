@@ -24,22 +24,15 @@ logger = logging.getLogger(name="groundlight.stream")
 
 HELP_TEXT = """Groundlight Stream Processor
 
-A command-line tool that captures frames from a video source and sends them to a Groundlight detector for analysis.
+Captures frames from video sources and sends them to Groundlight detectors for analysis.
 
-Supports a variety of input sources including:
-- Video devices (usb cameras, webcams, etc)
+Supported input sources:
+- USB cameras and webcams
 - RTSP streams
 - YouTube Live streams
 - HLS streams
-- Image directories
-- Video files (mp4, etc)
-- Image URLs
+- Video files (mp4, mov, mjpeg)
 """
-
-# TODO list:
-# - Reintroduce support for image URLs in upstream framegrab lib
-# - Reintroduce support for image directories in upstream framegrab lib
-# - Reintroduce support for video files in upstream framegrab lib
 
 
 def process_single_frame(frame: cv2.Mat, gl: Groundlight, detector: str) -> None:
@@ -93,7 +86,8 @@ def parse_motion_args(args: argparse.Namespace) -> tuple[bool, float, int, float
         return False, 0, 0, 0, 0
 
     logger.info(
-        f"Motion detection enabled with pixel_threshold={args.motion_pixel_threshold}, value_threshold={args.motion_val_threshold} post-motion capture of {args.postmotion}s "
+        f"Motion detection enabled with pixel_threshold={args.motion_pixel_threshold}, "
+        f"value_threshold={args.motion_val_threshold} post-motion capture of {args.postmotion}s "
         f"and max interval of {args.maxinterval}s"
     )
     return True, args.motion_pixel_threshold, args.motion_val_threshold, args.postmotion, args.maxinterval
@@ -183,7 +177,7 @@ def print_banner(gl: Groundlight, args: argparse.Namespace) -> None:
     print(f"  Target Detector: {detector}")
     print(f"  Groundlight Endpoint: {gl.endpoint}")
     print(f"  Whoami: {gl.whoami()}")
-    print(f"  Frames/sec: {args.fps}    (Seconds/frame: {1/args.fps:.3f})")
+    print(f"  Max Frames/sec: {args.fps}    (Seconds/frame: {1/args.fps:.3f})")
     print(f"  Motion Detection: {motdet}")
     print("==================================================")
 
