@@ -32,43 +32,45 @@ usage: python -m stream -t TOKEN -d DETECTOR [options]
 
 Groundlight Stream Processor
 
-A command-line tool that captures frames from a video source and sends them to a Groundlight detector for analysis.
+Captures frames from video sources and sends them to Groundlight detectors for analysis.
 
-Supports a variety of input sources including:
-- Video devices (usb cameras, webcams, etc)
+Supported input sources:
+- USB cameras and webcams
 - RTSP streams
 - YouTube Live streams
 - HLS streams
-- Image directories
-- Video files (mp4, etc)
-- Image URLs
+- Video files (mp4, mov, mjpeg)
 
 options:
   -h, --help            show this help message and exit
-  -t, --token TOKEN     Groundlight API token for authentication.
-  -d, --detector DETECTOR
+  -t TOKEN, --token TOKEN
+                        Groundlight API token for authentication.
+  -d DETECTOR, --detector DETECTOR
                         Detector ID to send ImageQueries to.
-  -e, --endpoint ENDPOINT
+  -e ENDPOINT, --endpoint ENDPOINT
                         API endpoint to target. For example, could be pointed at an edge-endpoint proxy server (https://github.com/groundlight/edge-endpoint).
-  -s, --stream STREAM   Video source. A device ID, filename, or URL. Defaults to device ID '0'.
-  -x, --streamtype {infer,device,directory,rtsp,youtube,file,image_url}
+  -s STREAM, --stream STREAM
+                        Video source. A device ID, filename, or URL. Defaults to device ID '0'.
+  -x {infer,device,directory,rtsp,youtube,file,image_url}, --streamtype {infer,device,directory,rtsp,youtube,file,image_url}
                         Source type. Defaults to 'infer' which will attempt to set this value based on --stream.
-  -f, --fps FPS         Frames per second to capture (0 for max rate). Defaults to 1 FPS.
+  -f FPS, --fps FPS     Frames per second to capture (0 for max rate). Defaults to 1 FPS.
   -v, --verbose         Enable debug logging.
   -m, --motion          Enables motion detection, which is disabled by default.
-  -r, --threshold THRESHOLD
-                        Motion detection threshold (% pixels changed). Defaults to 1%.
-  -p, --postmotion POSTMOTION
+  -r MOTION_PIXEL_THRESHOLD, --motion_pixel_threshold MOTION_PIXEL_THRESHOLD
+                        Motion detection pixel threshold (% pixels changed). Defaults to 1%.
+  -b MOTION_VAL_THRESHOLD, --motion_val_threshold MOTION_VAL_THRESHOLD
+                        Motion detection value threshold (degree of change). Defaults to 20.
+  -p POSTMOTION, --postmotion POSTMOTION
                         Seconds to capture after motion detected. Defaults to 1 second.
-  -i, --maxinterval MAXINTERVAL
+  -i MAXINTERVAL, --maxinterval MAXINTERVAL
                         Max seconds between frames even without motion. Defaults to 1000 seconds.
   -k, --keep-connection-open
                         Keep connection open for low-latency frame grabbing (uses more CPU and network bandwidth). Defaults to false.
-  -w, --width RESIZE_WIDTH
+  -w RESIZE_WIDTH, --width RESIZE_WIDTH
                         Resize width in pixels.
-  -y, --height RESIZE_HEIGHT
+  -y RESIZE_HEIGHT, --height RESIZE_HEIGHT
                         Resize height in pixels.
-  -c, --crop CROP       Crop region, specified as fractions (0-1) of each dimension (e.g. '0.25,0.2,0.8,0.9').
+  -c CROP, --crop CROP  Crop region, specified as fractions (0-1) of each dimension (e.g. '0.25,0.2,0.8,0.9').
 ```
 
 Start sending frames and getting predictions and labels using your own API token and detector ID:
