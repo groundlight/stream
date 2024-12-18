@@ -3,7 +3,6 @@ import io
 import logging
 import math
 import os
-import sys
 import time
 from functools import partial
 from logging.config import dictConfig
@@ -11,11 +10,11 @@ from queue import Queue
 
 import cv2
 import yaml
-from framegrab import MotionDetector
+from framegrab import FrameGrabber, GrabError, MotionDetector
 from groundlight import Groundlight
 
-from stream.grabber import FrameGrabber
-from stream.image_processing import crop_frame, parse_crop_string, resize_if_needed
+from stream.grabber import StreamType, framegrabber_factory
+from stream.image_processing import crop_frame, parse_crop_string
 from stream.threads import setup_workers
 
 fname = os.path.join(os.path.dirname(__file__), "logging.yaml")
@@ -25,25 +24,19 @@ logger = logging.getLogger(name="groundlight.stream")
 
 HELP_TEXT = """Groundlight Stream Processor
 
-A command-line tool that captures frames from a video source and sends them to a Groundlight detector for analysis.
+Captures frames from video sources and sends them to Groundlight detectors for analysis.
 
-Supports a variety of input sources including:
-- Video devices (webcams)
-- Video files (mp4, etc)
+Supported input sources:
+- USB cameras and webcams
 - RTSP streams
-- YouTube videos
-- Image directories
-- Image URLs
+- YouTube Live streams
+- HLS streams
+- Video files (mp4, mov, mjpeg)
 """
 
 
-# TODO list:
-# - Remove multithreading - not needed now that the Groundlight client supports ask_async
-# - Use the FrameGrabber class from the framegrab library
-
-
 def process_single_frame(frame: cv2.Mat, gl: Groundlight, detector: str) -> None:
-    """Process a single frame and send it to Groundlight
+    """Process a single frame and send it to Groundlight.
 
     Args:
         frame: OpenCV image frame to process
@@ -51,24 +44,25 @@ def process_single_frame(frame: cv2.Mat, gl: Groundlight, detector: str) -> None
         detector: ID of detector to query
     """
     try:
-        # Prepare image
+        # Encode image to JPEG
         start = time.time()
-        is_success, buffer = cv2.imencode(".jpg", frame)
-        io_buf = io.BytesIO(buffer)  # type: ignore
-        end = time.time()
-        logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
+        _, buffer = cv2.imencode(".jpg", frame)
+        io_buf = io.BytesIO(buffer)
+        encode_time = time.time() - start
+        logger.debug(f"Encoded image to JPEG in {encode_time*1000:.1f}ms")
 
-        # Submit image to Groundlight
+        # Submit to Groundlight
         start = time.time()
         image_query = gl.ask_async(detector=detector, image=io_buf)
-        end = time.time()
-        logger.debug(f"{image_query=}")
-        logger.info(f"API time for image {1000*(end-start):.1f}ms")
+        api_time = time.time() - start
+        logger.debug(f"Submitted image query via gl.ask_async() in {api_time*1000:.1f}ms")
+        logger.debug(f"Image query response:\n{image_query.model_dump_json(indent=2)}")
+
     except Exception as e:
-        logger.error(f"Exception while processing frame : {e}", exc_info=True)
+        logger.error(f"Failed to process frame: {e}", exc_info=True)
 
 
-def validate_stream_args(args: argparse.Namespace) -> tuple[str | int, str | None]:
+def validate_stream_args(args: argparse.Namespace) -> tuple[str | int, StreamType | None]:
     """Parse and validate stream source arguments"""
     stream = args.stream
     stream_type = args.streamtype.lower()
@@ -79,21 +73,24 @@ def validate_stream_args(args: argparse.Namespace) -> tuple[str | int, str | Non
         except ValueError:
             logger.debug(f"{stream=} is not an int. Treating as a filename or url.")
         stream_type = None
+    else:
+        stream_type = StreamType(stream_type)
 
     return stream, stream_type
 
 
-def parse_motion_args(args: argparse.Namespace) -> tuple[bool, float, float, float]:
+def parse_motion_args(args: argparse.Namespace) -> tuple[bool, float, int, float, float]:
     """Parse and validate motion detection arguments"""
     if not args.motion:
         logger.info("Motion detection disabled.")
-        return False, 0, 0, 0
+        return False, 0, 0, 0, 0
 
     logger.info(
-        f"Motion detection enabled with threshold={args.threshold} and post-motion capture of {args.postmotion}s "
+        f"Motion detection enabled with pixel_threshold={args.motion_pixel_threshold}, "
+        f"value_threshold={args.motion_val_threshold} post-motion capture of {args.postmotion}s "
         f"and max interval of {args.maxinterval}s"
     )
-    return True, args.threshold, args.postmotion, args.maxinterval
+    return True, args.motion_pixel_threshold, args.motion_val_threshold, args.postmotion, args.maxinterval
 
 
 def run_capture_loop(  # noqa: PLR0912 PLR0913
@@ -103,8 +100,6 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
     motion_detector: MotionDetector | None,
     post_motion_time: float,
     max_frame_interval: float,
-    resize_width: int,
-    resize_height: int,
     crop_region: tuple[float, float, float, float] | None,
 ) -> None:
     """Main capture loop implementation"""
@@ -119,19 +114,24 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
 
     while True:
         start = time.time()
-        frame = grabber.grab()
-        if frame is None:
+        try:
+            frame = grabber.grab()
+        except GrabError:
+            logger.exception("Error grabbing frame")
+            frame = None
+
+        if frame is None:  # No frame captured, or exception occurred
             logger.warning("No frame captured!")
             time.sleep(0.1)  # Brief pause before retrying
             continue
 
         now = time.time()
-        logger.debug(f"Captured frame in {now-start:.3f}s, size {frame.shape}")
+        logger.debug(f"Grabbed frame in {now-start:.3f}s, size {frame.shape}")
 
-        # Apply cropping if configured
+        # Apply cropping if configured, needs to happen before motion detection
         if crop_region:
             original_shape = frame.shape
-            frame = crop_frame(frame, crop_region)
+            frame = crop_frame(frame, crop_region)  # type: ignore
             logger.debug(f"Cropped frame from {original_shape} to {frame.shape}")
 
         # Determine if we should process this frame
@@ -153,7 +153,6 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
 
         # Add frame to work queue
         if add_frame_to_queue:
-            frame = resize_if_needed(frame, resize_width, resize_height)
             queue.put(frame)
             last_frame_time = time.time()
 
@@ -178,7 +177,7 @@ def print_banner(gl: Groundlight, args: argparse.Namespace) -> None:
     print(f"  Target Detector: {detector}")
     print(f"  Groundlight Endpoint: {gl.endpoint}")
     print(f"  Whoami: {gl.whoami()}")
-    print(f"  Frames/sec: {args.fps}    (Seconds/frame: {1/args.fps:.3f})")
+    print(f"  Max Frames/sec: {args.fps}    (Seconds/frame: {1/args.fps:.3f})")
     print(f"  Motion Detection: {motdet}")
     print("==================================================")
 
@@ -223,10 +222,17 @@ def main():
     )
     parser.add_argument(
         "-r",
-        "--threshold",
+        "--motion_pixel_threshold",
         type=float,
         default=1,
-        help="Motion detection threshold (%% pixels changed). Defaults to 1%%.",
+        help="Motion detection pixel threshold (%% pixels changed). Defaults to 1%%.",
+    )
+    parser.add_argument(
+        "-b",
+        "--motion_val_threshold",
+        type=int,
+        default=20,
+        help="Motion detection value threshold (degree of change). Defaults to 20.",
     )
     parser.add_argument(
         "-p",
@@ -243,13 +249,22 @@ def main():
         help="Max seconds between frames even without motion. Defaults to 1000 seconds.",
     )
 
+    # Stream options
+    parser.add_argument(
+        "-k",
+        "--keep-connection-open",
+        action="store_true",
+        default=False,
+        help="Keep connection open for low-latency frame grabbing (uses more CPU and network bandwidth). Defaults to false.",
+    )
+
     # Image pre-processing
     parser.add_argument("-w", "--width", dest="resize_width", type=int, default=0, help="Resize width in pixels.")
     parser.add_argument("-y", "--height", dest="resize_height", type=int, default=0, help="Resize height in pixels.")
     parser.add_argument(
         "-c",
         "--crop",
-        default="0,0,1,1",
+        default=None,
         help="Crop region, specified as fractions (0-1) of each dimension (e.g. '0.25,0.2,0.8,0.9').",
     )
 
@@ -262,15 +277,23 @@ def main():
 
     crop_region = parse_crop_string(args.crop) if args.crop else None
     stream, stream_type = validate_stream_args(args)
-    motion_detect, motion_threshold, post_motion_time, max_frame_interval = parse_motion_args(args)
+    motion_detect, motion_pixel_threshold, motion_val_threshold, post_motion_time, max_frame_interval = (
+        parse_motion_args(args)
+    )
 
     # Setup Groundlight client
     gl = Groundlight(endpoint=args.endpoint, api_token=args.token)
     logger.debug(f"Groundlight client created, whoami={gl.whoami()}")
 
     # Setup frame grabber
-    grabber_config = dict(stream=stream, stream_type=stream_type, fps_target=args.fps)
-    grabber = FrameGrabber.create_grabber(**grabber_config)
+    grabber = framegrabber_factory(
+        stream=stream,
+        stream_type=stream_type,
+        height=args.resize_height,
+        width=args.resize_width,
+        max_fps=args.fps,
+        keep_connection_open=args.keep_connection_open,
+    )
 
     # Setup workers
     worker_count = 10 if args.fps == 0 else math.ceil(args.fps)
@@ -278,7 +301,11 @@ def main():
     queue, tc, workers = setup_workers(fn=_process_single_frame, num_workers=worker_count)
 
     # Setup motion detection if enabled
-    motion_detector = MotionDetector(pct_threshold=motion_threshold) if motion_detect else None
+    motion_detector = (
+        MotionDetector(pct_threshold=motion_pixel_threshold, val_threshold=motion_val_threshold)
+        if motion_detect
+        else None
+    )
 
     print_banner(gl=gl, args=args)
 
@@ -291,14 +318,17 @@ def main():
             motion_detector=motion_detector,
             post_motion_time=post_motion_time,
             max_frame_interval=max_frame_interval,
-            resize_width=args.resize_width,
-            resize_height=args.resize_height,
             crop_region=crop_region,
         )
     except KeyboardInterrupt:
         logger.info("Exiting with KeyboardInterrupt.")
-        tc.force_exit()
-        sys.exit(-1)
+    except Exception as e:
+        logger.error(f"Exiting with exception: {e}", exc_info=True)
+    finally:
+        # Clean up threads
+        tc.shutdown()
+        for worker in workers:
+            worker.join(timeout=5.0)
 
 
 if __name__ == "__main__":

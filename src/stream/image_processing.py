@@ -10,35 +10,6 @@ dictConfig(yaml.safe_load(open(fname)))
 logger = logging.getLogger(name="groundlight.stream")
 
 
-def resize_if_needed(frame: cv2.Mat, width: int, height: int) -> cv2.Mat:
-    """Resize image frame while maintaining aspect ratio
-
-    Args:
-        frame: OpenCV image array
-        width: Target width in pixels (0 to scale based on height)
-        height: Target height in pixels (0 to scale based on width)
-    """
-    if (width == 0) & (height == 0):  # No resize needed
-        return frame
-
-    image_height, image_width, _ = frame.shape
-    if width > 0:
-        target_width = width
-    else:
-        height_proportion = height / image_height
-        target_width = int(image_width * height_proportion)
-
-    if height > 0:
-        target_height = height
-    else:
-        width_proportion = width / image_width
-        target_height = int(image_height * width_proportion)
-
-    logger.warning(f"resizing from {frame.shape=} to {target_width=}x{target_height=}")
-    frame = cv2.resize(frame, dsize=(target_width, target_height))
-    return frame
-
-
 def crop_frame(frame: cv2.Mat, crop_region: tuple[float, float, float, float]) -> cv2.Mat:
     """Crop image frame to specified region
 

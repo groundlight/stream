@@ -17,10 +17,10 @@ def test_parse_stream_args():
     assert stream_type is None
 
     # Test explicit device type
-    args = argparse.Namespace(stream="1", streamtype="device")
+    args = argparse.Namespace(stream="1", streamtype="generic_usb")
     stream, stream_type = validate_stream_args(args)
     assert stream == "1"
-    assert stream_type == "device"
+    assert stream_type == "generic_usb"
 
     # Test directory type
     args = argparse.Namespace(stream="*.jpg", streamtype="directory")
@@ -35,10 +35,10 @@ def test_parse_stream_args():
     assert stream_type == "rtsp"
 
     # Test YouTube URL
-    args = argparse.Namespace(stream="https://youtube.com/watch?v=123", streamtype="youtube")
+    args = argparse.Namespace(stream="https://youtube.com/watch?v=123", streamtype="youtube_live")
     stream, stream_type = validate_stream_args(args)
     assert stream == "https://youtube.com/watch?v=123"
-    assert stream_type == "youtube"
+    assert stream_type == "youtube_live"
 
 
 def test_parse_motion_args():

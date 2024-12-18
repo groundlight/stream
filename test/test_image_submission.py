@@ -59,8 +59,6 @@ def test_run_capture_loop_basic(test_frame):
             motion_detector=None,
             post_motion_time=0,
             max_frame_interval=0,
-            resize_width=0,
-            resize_height=0,
             crop_region=None,
         )
 
@@ -99,8 +97,6 @@ def test_run_capture_loop_motion_detection(test_frame):
             motion_detector=motion_detector,
             post_motion_time=1.0,
             max_frame_interval=5.0,
-            resize_width=0,
-            resize_height=0,
             crop_region=None,
         )
 
@@ -131,8 +127,6 @@ def test_run_capture_loop_fps_zero(test_frame):
             motion_detector=None,
             post_motion_time=0,
             max_frame_interval=0,
-            resize_width=0,
-            resize_height=0,
             crop_region=None,
         )
 
@@ -163,8 +157,6 @@ def test_run_capture_loop_no_frame():
             motion_detector=None,
             post_motion_time=0,
             max_frame_interval=0,
-            resize_width=0,
-            resize_height=0,
             crop_region=None,
         )
 
