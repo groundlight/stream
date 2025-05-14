@@ -1,17 +1,17 @@
 [project]
 name = "stream"
-version = "0.5.2"
+version = "0.5.3"
 description = "Groundlight Stream Processor - Container for analyzing video using RTSP etc"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "framegrab>=0.7.0",
-    "groundlight>=0.18.4",
-    "jsonformatter>=0.3.2",
+    "framegrab>=0.11.3",
+    "groundlight>=0.22.6",
+    "jsonformatter>=0.3.4",
     "numpy<2.0.0",
-    "opencv-python-headless>=4.10.0.84",
+    "opencv-python-headless>=4.11.0.86",
     "PyYAML==6.0.2",
-    "streamlink==7.0.0",
+    "streamlink==7.3.0",
 ]
 
 [project.optional-dependencies]
