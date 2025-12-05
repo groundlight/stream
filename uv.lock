@@ -215,7 +215,7 @@ wheels = [
 
 [[package]]
 name = "groundlight"
-version = "0.22.6"
+version = "0.23.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -227,9 +227,9 @@ dependencies = [
     { name = "typer" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/1a/af3fcd438e49ad2c2382b090035d1ab257b61a9b382b77613be623ea7708/groundlight-0.22.6.tar.gz", hash = "sha256:e9c25daf71f2cf59058592bd7d0a3fb363e3b08fcf25b495a58d84d39616cdc4", size = 106256, upload-time = "2025-05-06T18:57:06.89Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/c3/bcd99946a1280753d36f7b8512823c59f0f6dcbb6f6cc946731e645c1571/groundlight-0.23.3.tar.gz", hash = "sha256:4cec13a8588e06d35244092d4bd451965e87637bc0d50001f0cd2c326802830e", size = 110033, upload-time = "2025-10-21T01:34:57.643Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/a8/1c3280c4b8707e086ee6d434a92b9990c92c65de35b3d87161bb01498ab3/groundlight-0.22.6-py3-none-any.whl", hash = "sha256:8a96ff08050c9b005d3057f103558badef74ac4ed368ff09971d508b55ca4381", size = 314386, upload-time = "2025-05-06T18:57:05.674Z" },
+    { url = "https://files.pythonhosted.org/packages/04/5d/a96c33164b58f464e40305975fec22df4a320e9a97ffad9762898320336a/groundlight-0.23.3-py3-none-any.whl", hash = "sha256:67b74768c65af1a77ec9dd565890e5b62cd47d61fc6381c4fd5fa2363dad8316", size = 326038, upload-time = "2025-10-21T01:34:56.531Z" },
 ]
 
 [[package]]
@@ -955,7 +955,7 @@ wheels = [
 
 [[package]]
 name = "stream"
-version = "0.5.2"
+version = "0.5.3"
 source = { editable = "." }
 dependencies = [
     { name = "framegrab" },
@@ -977,7 +977,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "framegrab", specifier = ">=0.11.3" },
-    { name = "groundlight", specifier = ">=0.22.6" },
+    { name = "groundlight", specifier = ">=0.23.3" },
     { name = "jsonformatter", specifier = ">=0.3.4" },
     { name = "numpy", specifier = "<2.0.0" },
     { name = "opencv-python-headless", specifier = ">=4.11.0.86" },
@@ -1056,7 +1056,7 @@ wheels = [
 
 [[package]]
 name = "typer"
-version = "0.12.5"
+version = "0.15.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -1064,9 +1064,9 @@ dependencies = [
     { name = "shellingham" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/58/a79003b91ac2c6890fc5d90145c662fd5771c6f11447f116b63300436bc9/typer-0.12.5.tar.gz", hash = "sha256:f592f089bedcc8ec1b974125d64851029c3b1af145f04aca64d69410f0c9b722", size = 98953, upload-time = "2024-08-24T21:17:57.346Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6c/89/c527e6c848739be8ceb5c44eb8208c52ea3515c6cf6406aa61932887bf58/typer-0.15.4.tar.gz", hash = "sha256:89507b104f9b6a0730354f27c39fae5b63ccd0c95b1ce1f1a6ba0cfd329997c3", size = 101559, upload-time = "2025-05-14T16:34:57.704Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/2b/886d13e742e514f704c33c4caa7df0f3b89e5a25ef8db02aa9ca3d9535d5/typer-0.12.5-py3-none-any.whl", hash = "sha256:62fe4e471711b147e3365034133904df3e235698399bc4de2b36c8579298d52b", size = 47288, upload-time = "2024-08-24T21:17:55.451Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/62/d4ba7afe2096d5659ec3db8b15d8665bdcb92a3c6ff0b95e99895b335a9c/typer-0.15.4-py3-none-any.whl", hash = "sha256:eb0651654dcdea706780c466cf06d8f174405a659ffff8f163cfbfee98c0e173", size = 45258, upload-time = "2025-05-14T16:34:55.583Z" },
 ]
 
 [[package]]
@@ -1080,11 +1080,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "1.26.20"
+version = "2.6.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e4/e8/6ff5e6bc22095cfc59b6ea711b687e2b7ed4bdb373f7eeec370a97d7392f/urllib3-1.26.20.tar.gz", hash = "sha256:40c2dc0c681e47eb8f90e7e27bf6ff7df2e677421fd46756da1161c39ca70d32", size = 307380, upload-time = "2024-08-29T15:43:11.37Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/43/554c2569b62f49350597348fc3ac70f786e3c32e7f19d266e19817812dd3/urllib3-2.6.0.tar.gz", hash = "sha256:cb9bcef5a4b345d5da5d145dc3e30834f58e8018828cbc724d30b4cb7d4d49f1", size = 432585, upload-time = "2025-12-05T15:08:47.885Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/cf/8435d5a7159e2a9c83a95896ed596f68cf798005fe107cc655b5c5c14704/urllib3-1.26.20-py2.py3-none-any.whl", hash = "sha256:0ed14ccfbf1c30a9072c7ca157e4319b70d65f623e91e7b32fadb2853431016e", size = 144225, upload-time = "2024-08-29T15:43:08.921Z" },
+    { url = "https://files.pythonhosted.org/packages/56/1a/9ffe814d317c5224166b23e7c47f606d6e473712a2fad0f704ea9b99f246/urllib3-2.6.0-py3-none-any.whl", hash = "sha256:c90f7a39f716c572c4e3e58509581ebd83f9b59cced005b7db7ad2d22b0db99f", size = 131083, upload-time = "2025-12-05T15:08:45.983Z" },
 ]
 
 [[package]]
