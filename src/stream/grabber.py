@@ -70,7 +70,7 @@ class DirectoryFrameGrabber(FrameGrabber):
         start = time.time()
         frame = cv2.imread(self.filename_list[0], cv2.IMREAD_GRAYSCALE)
         self.filename_list.pop(0)
-        logger.debug(f"read the frame in {1000*(time.time()-start):.1f}ms")
+        logger.debug(f"read the frame in {1000 * (time.time() - start):.1f}ms")
 
         return frame
 
@@ -112,7 +112,7 @@ class FileStreamFrameGrabber(FrameGrabber):
         if not ret:
             raise RuntimeWarning("could not read frame from {self.capture=}.  possible end of file.")
         now = time.time()
-        logger.debug(f"read the frame in {1000*(now-start):.1f}ms")
+        logger.debug(f"read the frame in {1000 * (now - start):.1f}ms")
         return frame
 
 
@@ -145,7 +145,7 @@ class DeviceFrameGrabber(FrameGrabber):
         if not ret:
             raise RuntimeWarning("could not read frame from {self.capture=}")
         now = time.time()
-        logger.debug(f"read the frame in {1000*(now-start):.1f}ms")
+        logger.debug(f"read the frame in {1000 * (now - start):.1f}ms")
         return frame
 
 
@@ -194,7 +194,7 @@ class RTSPFrameGrabber(FrameGrabber):
             if not ret:
                 logger.error(f"could not read frame from {self.capture=}")
             now = time.time()
-            logger.debug(f"read the frame in {1000*(now-start):.1f}ms")
+            logger.debug(f"read the frame in {1000 * (now - start):.1f}ms")
             return frame
 
     def _grab_implementation(self) -> np.ndarray:
@@ -278,7 +278,7 @@ class YouTubeFrameGrabber(FrameGrabber):
             if not ret:
                 logger.error(f"failed to effectively reset stream {self.stream=} / {self.best_video.url=}")
         now = time.time()
-        logger.debug(f"read the frame in {1000*(now-start):.1f}ms")
+        logger.debug(f"read the frame in {1000 * (now - start):.1f}ms")
         self.capture.release()
         return frame
 
