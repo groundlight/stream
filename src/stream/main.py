@@ -56,14 +56,14 @@ def process_single_frame(frame: cv2.Mat, gl: Groundlight, detector: str) -> None
         is_success, buffer = cv2.imencode(".jpg", frame)
         io_buf = io.BytesIO(buffer)  # type: ignore
         end = time.time()
-        logger.info(f"Prepared the image in {1000*(end-start):.1f}ms")
+        logger.info(f"Prepared the image in {1000 * (end - start):.1f}ms")
 
         # Submit image to Groundlight
         start = time.time()
         image_query = gl.ask_async(detector=detector, image=io_buf)
         end = time.time()
         logger.debug(f"{image_query=}")
-        logger.info(f"API time for image {1000*(end-start):.1f}ms")
+        logger.info(f"API time for image {1000 * (end - start):.1f}ms")
     except Exception as e:
         logger.error(f"Exception while processing frame : {e}", exc_info=True)
 
@@ -126,7 +126,7 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
             continue
 
         now = time.time()
-        logger.debug(f"Captured frame in {now-start:.3f}s, size {frame.shape}")
+        logger.debug(f"Captured frame in {now - start:.3f}s, size {frame.shape}")
 
         # Apply cropping if configured
         if crop_region:
@@ -163,7 +163,7 @@ def run_capture_loop(  # noqa: PLR0912 PLR0913
             actual_delay = desired_delay - elapsed_time
             if actual_delay < 0:
                 logger.warning(
-                    f"Cannot maintain {fps} FPS. Processing took {now-start:.3f}s (queue size: {queue.qsize()})"
+                    f"Cannot maintain {fps} FPS. Processing took {now - start:.3f}s (queue size: {queue.qsize()})"
                 )
             else:
                 logger.debug(f"Waiting {actual_delay:.3f}s until next frame")
@@ -178,7 +178,7 @@ def print_banner(gl: Groundlight, args: argparse.Namespace) -> None:
     print(f"  Target Detector: {detector}")
     print(f"  Groundlight Endpoint: {gl.endpoint}")
     print(f"  Whoami: {gl.whoami()}")
-    print(f"  Frames/sec: {args.fps}    (Seconds/frame: {1/args.fps:.3f})")
+    print(f"  Frames/sec: {args.fps}    (Seconds/frame: {1 / args.fps:.3f})")
     print(f"  Motion Detection: {motdet}")
     print("==================================================")
 
