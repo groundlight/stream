@@ -1,6 +1,6 @@
 [project]
 name = "stream"
-version = "0.5.3"
+version = "0.5.4"
 description = "Groundlight Stream Processor - Container for analyzing video using RTSP etc"
 readme = "README.md"
 requires-python = ">=3.10"
