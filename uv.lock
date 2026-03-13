@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_version < '0'",
@@ -215,7 +215,7 @@ wheels = [
 
 [[package]]
 name = "groundlight"
-version = "0.23.3"
+version = "0.24.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -227,9 +227,9 @@ dependencies = [
     { name = "typer" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a2/c3/bcd99946a1280753d36f7b8512823c59f0f6dcbb6f6cc946731e645c1571/groundlight-0.23.3.tar.gz", hash = "sha256:4cec13a8588e06d35244092d4bd451965e87637bc0d50001f0cd2c326802830e", size = 110033, upload-time = "2025-10-21T01:34:57.643Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/92/6490433f979c4eef7a0b0257115f82ea4f14632482b7da6280e18a33ce5e/groundlight-0.24.0.tar.gz", hash = "sha256:d1faf88ebb6c3cea1c116be43df7c08a75c57e5c3e3d015bab072ebeddde5d8f", size = 110432, upload-time = "2026-03-13T17:35:17.331Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/5d/a96c33164b58f464e40305975fec22df4a320e9a97ffad9762898320336a/groundlight-0.23.3-py3-none-any.whl", hash = "sha256:67b74768c65af1a77ec9dd565890e5b62cd47d61fc6381c4fd5fa2363dad8316", size = 326038, upload-time = "2025-10-21T01:34:56.531Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/c5/cf2b0ce1158a8098df09b5620ac6e5d04053c745dc6cdf45155fcb545548/groundlight-0.24.0-py3-none-any.whl", hash = "sha256:cb5a78f17cc7ba92d5ea513b3695b003f65bd6d68e8cd6fc5945ea2200f49786", size = 326363, upload-time = "2026-03-13T17:35:15.995Z" },
 ]
 
 [[package]]
@@ -841,7 +841,7 @@ wheels = [
 
 [[package]]
 name = "requests"
-version = "2.32.3"
+version = "2.32.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -849,9 +849,9 @@ dependencies = [
     { name = "idna" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/63/70/2bf7780ad2d390a8d301ad0b550f1581eadbd9a20f896afe06353c2a2913/requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760", size = 131218, upload-time = "2024-05-29T15:37:49.536Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e1/0a/929373653770d8a0d7ea76c37de6e41f11eb07559b103b1c02cafb3f7cf8/requests-2.32.4.tar.gz", hash = "sha256:27d0316682c8a29834d3264820024b62a36942083d52caf2f14c0591336d3422", size = 135258, upload-time = "2025-06-09T16:43:07.34Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6", size = 64928, upload-time = "2024-05-29T15:37:47.027Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/e4/56027c4a6b4ae70ca9de302488c5ca95ad4a39e190093d6c1a8ace08341b/requests-2.32.4-py3-none-any.whl", hash = "sha256:27babd3cda2a6d50b30443204ee89830707d396671944c998b5975b031ac2b2c", size = 64847, upload-time = "2025-06-09T16:43:05.728Z" },
 ]
 
 [[package]]
@@ -977,7 +977,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "framegrab", specifier = ">=0.11.3" },
-    { name = "groundlight", specifier = ">=0.23.3" },
+    { name = "groundlight", specifier = ">=0.24.0" },
     { name = "jsonformatter", specifier = ">=0.3.4" },
     { name = "numpy", specifier = "<2.0.0" },
     { name = "opencv-python-headless", specifier = ">=4.11.0.86" },
@@ -1080,11 +1080,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.6.0"
+version = "2.6.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1c/43/554c2569b62f49350597348fc3ac70f786e3c32e7f19d266e19817812dd3/urllib3-2.6.0.tar.gz", hash = "sha256:cb9bcef5a4b345d5da5d145dc3e30834f58e8018828cbc724d30b4cb7d4d49f1", size = 432585, upload-time = "2025-12-05T15:08:47.885Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/1a/9ffe814d317c5224166b23e7c47f606d6e473712a2fad0f704ea9b99f246/urllib3-2.6.0-py3-none-any.whl", hash = "sha256:c90f7a39f716c572c4e3e58509581ebd83f9b59cced005b7db7ad2d22b0db99f", size = 131083, upload-time = "2025-12-05T15:08:45.983Z" },
+    { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
 ]
 
 [[package]]
