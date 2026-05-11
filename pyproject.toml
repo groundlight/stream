@@ -11,7 +11,7 @@ dependencies = [
     "numpy<2.0.0",
     "opencv-python-headless>=4.11.0.86",
     "PyYAML==6.0.2",
-    "streamlink==7.3.0",
+    "streamlink==8.4.0",
 ]
 
 [project.optional-dependencies]
